@@ -26,9 +26,9 @@ declare module "next-auth/jwt" {
 const handler = NextAuth({
   providers: [
     KeycloakProvider({
-      clientId: process.env.KEYCLOAK_CLIENT_ID || "zenflow-frontend",
+      clientId: process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID || "zenflow-frontend",
       clientSecret: process.env.KEYCLOAK_CLIENT_SECRET || "your-client-secret",
-      issuer: `${process.env.KEYCLOAK_URL || "http://localhost:8080"}/realms/${process.env.KEYCLOAK_REALM || "zenflow"}`,
+      issuer: `${process.env.NEXT_PUBLIC_KEYCLOAK_URL || "http://localhost:8080"}/realms/${process.env.NEXT_PUBLIC_KEYCLOAK_REALM || "zenflow"}`,
     }),
   ],
   callbacks: {

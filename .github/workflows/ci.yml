@@ -1,0 +1,85 @@
+name: ZenFlow CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+jobs:
+  frontend:
+    name: 🌐 Frontend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./apps/frontend
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: ./apps/frontend/package-lock.json
+
+    - name: 📦 Install Frontend Dependencies
+      run: npm ci
+
+    - name: 🔍 Lint Frontend
+      run: npm run lint || true  # Don't fail the build yet during Stage 1
+
+    - name: 🛠️ Build Frontend
+      run: npm run build
+      env:
+        # Add environment variables for build
+        NEXT_PUBLIC_API_URL: https://api.example.com
+        NEXTAUTH_URL: https://example.com
+        # Add placeholder values for Keycloak
+        NEXT_PUBLIC_KEYCLOAK_URL: https://keycloak.example.com
+        NEXT_PUBLIC_KEYCLOAK_REALM: zenflow
+        NEXT_PUBLIC_KEYCLOAK_CLIENT_ID: zenflow-frontend
+
+  backend:
+    name: 🔥 Backend Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ./apps/backend/src
+
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: ⚡ Restore .NET dependencies
+      run: dotnet restore
+
+    - name: 🔍 Check code format
+      run: dotnet format --verify-no-changes --verbosity diagnostic || true  # Don't fail the build yet during Stage 1
+
+    - name: 🛠️ Build Backend
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: 🧪 Run Backend Tests
+      run: dotnet test --no-restore --verbosity normal
+
+  integration:
+    name: 🔄 Integration Check
+    needs: [frontend, backend]
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📊 Report Status
+        run: echo "Both frontend and backend builds completed successfully!"
+      # In later stages, you could add actual integration tests here
+      # that verify frontend can interact with backend

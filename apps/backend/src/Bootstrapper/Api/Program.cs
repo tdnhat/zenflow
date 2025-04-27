@@ -26,4 +26,8 @@ app.MapSampleEndpoints();
 app.MapIdentityEndpoints();
 app.MapUserEndpoints();
 
+// Seed the database
+await app.SeedDatabaseAsync();
+
+// Run the application
 app.Run();

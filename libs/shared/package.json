@@ -1,0 +1,15 @@
+{
+  "name": "@zenflow/shared",
+  "version": "0.1.0",
+  "description": "Shared types and contracts for ZenFlow",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.2",
+    "typescript": "^5.0.0"
+  }
+}

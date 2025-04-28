@@ -1,0 +1,18 @@
+{
+    "extends": "../../libs/shared/tsconfig.base.json",
+    "compilerOptions": {
+        "allowJs": true,
+        "jsx": "preserve",
+        "moduleResolution": "node",
+        "resolveJsonModule": true,
+        "isolatedModules": true,
+        "noEmit": true,
+        "incremental": true,
+        "esModuleInterop": true,
+        "types": ["node"],
+        "baseUrl": ".",
+        "paths": {
+            "@shared/*": ["../../libs/shared/src/*"]
+        }
+    }
+}

@@ -2,7 +2,7 @@
 
 ## 1. Introduction
 
-**ZenFlow** is a modern web platform for managing organizational workflows and tasks. It will enable users to create, assign, and track tasks ("flows") in a flexible, secure way. The system will be built as a **full-stack application**: a **Next.js** (React) frontend and a **.NET 8** backend. This SRS outlines the system's scope, architecture, and requirements, emphasizing modular, scalable design. The frontend and backend will live in a **monorepo**, with shared libraries for common code (e.g. types, models). The design adopts a **modular monolith** backend architecture (a "Modulith") -- i.e., a single deployed application divided into independent modules -- which "**takes the best of both worlds**" of monoliths and microservices. Each module will use **Vertical Slice Architecture** (feature folders) with Domain-Driven Design and CQRS via MediatR to isolate functionality by use case. Authentication and authorization will use **OAuth2/OpenID Connect** via Keycloak, providing single sign-on, user management and fine-grained roles. Message-based, asynchronous communication will use RabbitMQ with MassTransit, implementing the **Transactional Outbox Pattern** to ensure reliability. PostgreSQL (with EF Core code-first) will store data, and Redis will act as a distributed cache to improve performance.
+**ZenFlow** is a modern web platform for managing organizational workflows and tasks with an advanced visual workflow editor. It will enable users to create, assign, and track tasks ("flows") in a flexible, secure way through an intuitive, drag-and-drop visual interface similar to n8n. The system will be built as a **full-stack application**: a **Next.js** (React) frontend and a **.NET 8** backend. This SRS outlines the system's scope, architecture, and requirements, emphasizing modular, scalable design. The frontend will leverage modern React libraries including **React Flow** for the visual workflow editor, **Chakra UI** for components, **Zustand** for state management, **TanStack React Query** for data fetching, **Axios** for API calls, **React Hook Form** for form handling, and **React Hot Toast** for notifications. The frontend and backend will live in a **monorepo**, with shared libraries for common code (e.g. types, models). The design adopts a **modular monolith** backend architecture (a "Modulith") -- i.e., a single deployed application divided into independent modules -- which "**takes the best of both worlds**" of monoliths and microservices. Each module will use **Vertical Slice Architecture** (feature folders) with Domain-Driven Design and CQRS via MediatR to isolate functionality by use case. Authentication and authorization will use **OAuth2/OpenID Connect** via Keycloak, providing single sign-on, user management and fine-grained roles. Message-based, asynchronous communication will use RabbitMQ with MassTransit, implementing the **Transactional Outbox Pattern** to ensure reliability. PostgreSQL (with EF Core code-first) will store data, and Redis will act as a distributed cache to improve performance.
 
 ## 2. System Overview
 
@@ -11,15 +11,35 @@ ZenFlow consists of two main components: the **Frontend** (Next.js app) and the 
 ```
 /src
   /app or /pages # Next.js routes
-  /components    # Reusable React components
+  /components    
+    /ui          # Reusable UI components (buttons, forms, etc.)
+    /features    # Feature-specific components (WorkflowEditor, NodePanel)
+    /layouts     # Layout components (Sidebar, Header, etc.)
   /contexts      # React Context providers (e.g. AuthContext, ThemeContext)
-  /hooks         # Custom hooks (e.g. useAuth, useApi)
-  /services or /lib # API client code, business logic utilities
+  /hooks         # Custom hooks (e.g. useAuth, useApi, useWorkflow)
+  /services      # API client code, business logic utilities
+  /lib           # Technical infrastructure (axios setup, query client)
+  /store         # Zustand stores (workflowStore, authStore, etc.)
   /styles        # Global and component styles
+  /utils         # Utility functions
   /public        # Public assets
 ```
 
-A core principle is "separation of concerns": UI components live under components/, application logic like API calls or auth helpers go into a services/ or lib/ folder, and global state (contexts or stores) in contexts/. Utility functions (pure helpers) belong in utils/ or helpers/. For example, authentication helpers and API client config would reside in a lib/ directory, while pure utils (date formatting, validation) go into utils/. The official Next.js guide similarly recommends a structure with app/, components/, lib/, utils/, and styles/ folders.
+A core principle is "separation of concerns": UI components live under components/, application logic like API calls or auth helpers go into a services/ folder, and global state management uses Zustand stores in store/. Utility functions (pure helpers) belong in utils/. The frontend will incorporate several key technologies to deliver a seamless workflow automation experience:
+
+1. **React Flow**: Provides the core drag-and-drop graph editor for building visual workflows. It enables users to create nodes, connect them with edges, and manage the flow of data/actions visually. React Flow will be customized with ZenFlow-specific node types, edge styles, and controls.
+
+2. **Zustand**: A lightweight state management solution that replaces the need for Redux or Context API for managing global state. Zustand will manage the workflow editor state, authentication state, and theme preferences.
+
+3. **Chakra UI**: A component library with accessibility baked in, providing a consistent design system for all UI elements. Chakra UI components will be used throughout the application for forms, buttons, modals, and other UI elements.
+
+4. **TanStack React Query**: Handles data fetching, caching, and state synchronization with the server. It will manage all API interactions for workflow data, user data, and system configuration.
+
+5. **Axios**: Used for making HTTP requests to the backend API. Will be configured with interceptors for handling authentication tokens and error responses.
+
+6. **React Hook Form**: Manages form state and validation for all forms in the application, particularly for node configuration panels in the workflow editor.
+
+7. **React Hot Toast**: Provides a notification system for user feedback on actions (success, errors, warnings).
 
 The backend is a **Modular Monolith**. Conceptually, ZenFlow is one application, but code is partitioned into **modules** (bounded contexts) by feature. Each module contains its own domain models, data access, and API endpoints. For example, there might be modules like UserManagement, Workflow, and Notifications. Each module is implemented with vertical slices: features (use cases) are grouped in folders containing all layers (API endpoint, input validation, handlers, domain logic). This means instead of traditional layered code, each HTTP request maps to a "slice" of code. Modules communicate with each other via asynchronous messaging when needed (e.g. publishing a WorkflowCreated event), but within the same process they may also call each other's APIs or services if appropriate. Importantly, the architecture allows eventual extraction of modules into separate services ("microservices") in the future, since modules are loosely coupled and rely only on well-defined APIs.
 
@@ -55,21 +75,42 @@ ZenFlow's functionality is organized into user-visible features and internal beh
 
 - **User Management (FR2)**: Admin users shall be able to create, read, update, and delete user accounts. User data (profiles, roles) is managed through Keycloak's admin API or via integration. On user creation, the system may send a notification or event to other modules (e.g. welcome email).
 
-- **Workflow/Task Management (FR3)**: ZenFlow's core feature is allowing users to **create and manage workflows** (a "flow" consists of tasks or steps). Users can perform CRUD operations on workflows. For example, a user can create a new workflow with specific steps, assign tasks to users, and mark tasks complete. Each workflow is a domain entity stored in PostgreSQL. These actions are exposed via RESTful endpoints in the corresponding backend module and via pages/components on the frontend.
+- **Visual Workflow Editor (FR3)**: ZenFlow's core feature is a powerful, visual workflow editor similar to n8n, built with **React Flow** for the graph/editor interface. Users shall be able to:
+  * Create workflows by dragging and dropping nodes onto a canvas
+  * Connect nodes with edges to define the flow of data/actions
+  * Configure nodes through property panels built with Chakra UI and React Hook Form
+  * Save, load, and version workflows
+  * Execute workflows manually or based on triggers (time-based, event-based, etc.)
+  * View workflow execution history and logs
+  * Create custom nodes for specific business processes
+  * Import/export workflow definitions
 
-- **Asynchronous Notifications (FR4)**: When certain events occur (e.g. a new workflow is created or a task is completed), the system shall publish a domain event message. For example, creating a workflow publishes a WorkflowCreated event to RabbitMQ. Other modules (or future services) may subscribe to these events. Event publishing uses the Outbox pattern so that, e.g., creating a workflow in the database and enqueuing the message occur in one transaction.
+- **Workflow Definition and Execution (FR4)**: The backend shall provide a comprehensive API for workflow definition storage and execution. The workflow engine will support:
+  * Node type registration and discovery
+  * Workflow execution (synchronous and asynchronous)
+  * Workflow state management (pending, running, completed, failed)
+  * Error handling and retry logic
+  * Execution logs and history
 
-- **Data Consistency and Reliability (FR5)**: The system shall use **PostgreSQL** with EF Core for persistent storage of all domain data. Operations that affect multiple tables or modules (e.g. an order that affects inventory and accounts) must be handled transactionally within the monolith or via eventual consistency with messaging. The Outbox ensures message delivery even if the message broker or network is temporarily unavailable.
+- **Asynchronous Notifications (FR5)**: When certain events occur (e.g. a workflow is created or completes execution), the system shall publish a domain event message. For example, creating a workflow publishes a WorkflowCreated event to RabbitMQ. Other modules (or future services) may subscribe to these events. Event publishing uses the Outbox pattern so that, e.g., creating a workflow in the database and enqueuing the message occur in one transaction.
 
-- **Caching (FR6)**: To improve read performance, ZenFlow shall cache frequently accessed data in **Redis**. For instance, user session information or reference data may be cached. The cache will be updated on data changes to ensure consistency.
+- **Data Consistency and Reliability (FR6)**: The system shall use **PostgreSQL** with EF Core for persistent storage of all domain data. Operations that affect multiple tables or modules must be handled transactionally within the monolith or via eventual consistency with messaging. The Outbox ensures message delivery even if the message broker or network is temporarily unavailable.
 
-- **Clean API Design (FR7)**: Backend APIs shall follow REST principles (or minimal API patterns) and use consistent request/response models. Data validation will be applied (e.g., model binding and FluentValidation or similar) so that invalid inputs are rejected.
+- **Caching (FR7)**: To improve read performance, ZenFlow shall cache frequently accessed data in **Redis**. For instance, user session information, workflow definitions, or node type metadata may be cached. The cache will be updated on data changes to ensure consistency.
 
-- **Scalable Frontend (FR8)**: The Next.js frontend shall be modular. Components and hooks should be reusable across pages. State management (e.g. React Context or a lightweight store like Zustand) will be used for global state (authentication, theme, etc). For example, an AuthContext can provide the current user and auth token to components, avoiding prop-drilling. Service modules (e.g. API clients under lib/) will encapsulate calls to the backend.
+- **Clean API Design (FR8)**: Backend APIs shall follow REST principles (or minimal API patterns) and use consistent request/response models. Data validation will be applied (e.g., model binding and FluentValidation or similar) so that invalid inputs are rejected.
 
-- **Reusable Shared Code (FR9)**: Common code (e.g. TypeScript interfaces for API data, form components, validation schemas) will be placed in shared folders/packages to avoid duplication. For example, if the backend and frontend both use a UserDto definition, it can live in a shared libs/shared package in the monorepo.
+- **Frontend Architecture (FR9)**: The Next.js frontend shall follow modern React patterns:
+  * **Zustand** for global state management (workflow editor state, authentication, theme)
+  * **TanStack React Query** for data fetching, caching, and synchronization with server state
+  * **Axios** for API communication with interceptors for authentication and error handling
+  * **React Hook Form** for all form handling with validation
+  * **React Hot Toast** for user notifications/feedback
+  * **Chakra UI** for consistent, accessible, and themeable UI components
 
-- **Module Isolation (FR10)**: Internal backend modules shall be isolated. A module may expose internal services or a public API. Other modules should not directly access a module's database; all cross-module actions happen via messages or public APIs. This encapsulation allows each module to evolve independently.
+- **Reusable Shared Code (FR10)**: Common code (e.g. TypeScript interfaces for API data, form components, validation schemas) will be placed in shared folders/packages to avoid duplication. For example, if the backend and frontend both use a WorkflowNodeDto definition, it can live in a shared libs/shared package in the monorepo.
+
+- **Module Isolation (FR11)**: Internal backend modules shall be isolated. A module may expose internal services or a public API. Other modules should not directly access a module's database; all cross-module actions happen via messages or public APIs. This encapsulation allows each module to evolve independently.
 
 ## 4. Non-Functional Requirements
 
@@ -123,101 +164,157 @@ Internally, **MediatR** is used for implementing requests within a module: e.g.,
 
 **Frontend Design Patterns**
 
-- **Folder Structure (src/)**: As discussed, use app/ (or pages/), components/, contexts/, hooks/, lib/, utils/, and styles/.
+- **Folder Structure (src/)**: ZenFlow will use a structured, domain-driven folder organization with:
+  * `app/` - Next.js App Router pages and layouts
+  * `components/` - UI components organized into ui/, features/, and layouts/
+  * `hooks/` - Custom React hooks
+  * `lib/` - Technical infrastructure setup
+  * `store/` - Zustand stores for state management
+  * `services/` - API and business logic
+  * `utils/` - Pure utility functions
+  * `styles/` - Global styles and theme configuration
 
-- **Contexts & Hooks**: For global state (auth user, theme, etc.), React Contexts are defined under contexts/. Custom hooks under hooks/ consume these contexts or other logic (e.g. useFetch for calling the API). Services (in lib/ or services/) are plain JavaScript/TypeScript functions or classes that perform side effects -- e.g. apiClient.ts with functions like getWorkflows() or createWorkflow(). These services internally use fetch() or axios with the base API URL. They encapsulate endpoints, so components stay decoupled from raw API details. As recommended by best practices, the lib directory is for code that "interfaces with external services" or "contains business logic", e.g. API clients and auth helpers.
+- **Visual Workflow Editor**: The core workflow editor will be built using React Flow, with the following components:
+  * `WorkflowCanvas` - The main editor container that manages the React Flow instance
+  * `CustomNodes` - Domain-specific node types (triggers, actions, conditions, etc.)
+  * `CustomEdges` - Styled edge connections between nodes
+  * `NodePanel` - Configuration panel for the selected node using React Hook Form and Chakra UI
+  * `ToolboxPanel` - Draggable node types that can be added to the canvas
+  * `WorkflowControls` - Buttons for saving, running, and managing workflows
 
-- **Component Structure**: Reusable UI components (buttons, form fields) go in components/. Page-specific components can also live with their pages if using App Router (i.e. inside app/dashboard/). Each feature page under app/ (like app/workflows/) can have nested folders or React Server Components if using Next.js 13+.
+- **State Management with Zustand**: State will be managed with modular Zustand stores instead of Context or Redux:
+  * `workflowStore` - Manages the current workflow definition, nodes, and edges
+  * `executionStore` - Tracks workflow execution state and history
+  * `authStore` - Manages authentication state and user information
+  * `uiStore` - Controls UI state like sidebars, panels, and theme
 
-- **State Management**: We will likely use React Context for auth and any cross-cutting state, and possibly a simple state library (Zustand or Redux) if needed for complex global stores. As an example, an AuthProvider can use a hook to check token validity and refresh if needed. Data fetching can use React Query or SWR for caching API calls.
+- **Data Fetching with TanStack React Query**: API interactions will use React Query:
+  * Defined query and mutation hooks (e.g., `useWorkflows`, `useCreateWorkflow`)
+  * Automatic caching and invalidation for efficient data fetching
+  * Background data synchronization and optimistic updates
+  * Error handling and retry mechanisms
 
-### 5.2 Folder and Code Organization
+- **API Communication with Axios**: A configured Axios instance will handle all HTTP requests:
+  * Base URL configuration based on environment
+  * Authentication interceptors to attach JWT tokens to requests
+  * Response interceptors for error handling
+  * Request/response transformers for data formatting
 
-A possible **monorepo layout**:
+- **Form Handling with React Hook Form**: Forms throughout the application, especially for node configuration:
+  * Form validation using Zod or Yup schemas
+  * Field-level validation with immediate feedback
+  * Dynamic form generation based on node types
+  * Form state persistence during canvas interactions
 
-```
-/apps
-  /frontend/  # Next.js application (package.json, tsconfig, etc.)
-  /backend/   # .NET solution (ZenFlow.sln, projects per module)
-/libs/        # Shared libraries/packages
-  /models/    # DTOs/interfaces used by both FE and BE
-  /ui/        # Shared React components or design system (if applicable)
-/docker/      # Container/Docker configs, Compose files
-/infra/       # Terraform or Kubernetes configs (if any)
-/README.md
-```
+- **UI Components with Chakra UI**: A comprehensive UI layer using Chakra UI:
+  * Custom theme extending Chakra's base with ZenFlow's colors and styles
+  * Responsive layout components using Chakra's Grid and Flex
+  * Accessible form components with built-in validation states
+  * Modal dialogs, toasts, and popovers for interactive UI elements
 
-In the backend folder, each module is a C# class library or project (e.g. ZenFlow.Workflows, ZenFlow.Notifications, etc.) plus one Minimal API project that references them and wires up routes. Project references (or shared project files) ensure a clean modular build. Shared domain code or common utilities can live in a shared library (e.g. ZenFlow.Core).
+- **Notification System with React Hot Toast**: User feedback will be provided through:
+  * Success notifications after saving or executing workflows
+  * Error notifications with helpful context
+  * Warning notifications for potential issues
+  * Info notifications for system events
 
-On the frontend, workspaces (like PNPM or Yarn workspaces) can link shared libs/models into the Next app. This avoids duplicating type definitions for API models.
+- **Custom Hooks**: Application-specific hooks will abstract common behaviors:
+  * `useWorkflowEditor` - Manages the React Flow instance and editor state
+  * `useNodeTypes` - Provides available node types and their configurations
+  * `useWorkflowExecution` - Controls workflow execution and monitors progress
+  * `useAuth` - Handles authentication state and token refresh
 
-### 5.3 Technical Decisions and Rationale
+- **Services Layer**: Backend communication will be organized into service modules:
+  * `workflowService` - CRUD operations for workflows
+  * `nodeTypeService` - Fetches available node types and their configurations
+  * `executionService` - Controls workflow execution and fetches results
+  * `authService` - Handles authentication and user management
 
-- **Monorepo**: Eases synchronized development of FE/BE. Shared code (e.g. validation rules) can be in one place. Tools like Turborepo or Nx (or simple workspaces) will help.
+This architecture provides a clean separation of concerns while enabling the complex interactions needed for a workflow automation tool. Each technology was selected for its specific strengths: React Flow for the graph editor, Zustand for lightweight state management, TanStack Query for efficient data fetching, React Hook Form for form handling, Chakra UI for accessible components, and React Hot Toast for user notifications.
 
-- **Vertical Slice + DDD**: Organizing by feature keeps related code together and reduces merging conflicts for large teams. As Jimmy Bogard notes, vertical slices group all "concerns from front-end to back" around each request.
-
-- **MassTransit**: Provides an abstraction over RabbitMQ and supports patterns like sagas. Using MassTransit outbox simplifies reliable messaging.
-
-- **Redis**: Chosen as a high-performance cache. It's a common pair with .NET apps and easily integrates with the StackExchange.Redis library.
-
-- **Keycloak**: Open-source and widely supported by Spring Boot and .NET; it handles user federation, SSO, social login, etc. It saves development time on auth.
-
-- **Minimal APIs**: Reduces ceremony. Since we're using MediatR, endpoints can directly call await mediator.Send(new Command(...)), avoiding extra controller layers. This keeps the code concise and focused.
-
-## 6. Development Stages & Tasks
+# 6. Development Stages & Tasks
 
 Development will proceed in iterative stages, from a **Minimum Viable Product (MVP)** to advanced features. Each stage builds on the previous, with clear deliverables. The goal is to allow a junior developer to follow along step-by-step.
 
-### Stage 1: Project Setup & MVP Foundation
+## Stage 1: Project Initialization and Core Setup
+**Purpose:** Setup the base monorepo, frontend, backend, CI/CD.
+**Tasks:**
+* Create monorepo structure (`apps/frontend`, `apps/backend/src`, `libs/shared`, etc.)
+* Initialize **Next.js (TypeScript)** project in `/apps/frontend`
+* Initialize **.NET 8 Modular Monolith** project in `/apps/backend/src`
+* Create a **shared library** in `libs/` for DTOs and API contracts (optional at first)
+* Create `.env.example` for frontend and backend
+* Set up **CI/CD basic workflow** (GitHub Actions: checkout → build frontend → build backend)
+* Set up Docker Compose file for local services (Postgres, Redis, RabbitMQ, Keycloak)
+* Create README.md with project setup instructions
 
-- **Monorepo and Tooling**: Set up the monorepo with version control. Initialize Next.js app and .NET solution in separate folders. Configure TypeScript for FE and a C# solution (ZenFlow.sln) with ASP.NET Core. Choose a package manager (npm/Yarn/PNPM) and workspace config.
+**Expected Output:** ✔️ Monorepo ready ✔️ Frontend and Backend apps scaffolded ✔️ Build pipeline green ✔️ Basic README written
 
-- **Basic Folder Structure**: In Next.js, create the core directories (app/, components/, lib/, utils/, contexts/). In .NET, create initial projects: a Web API project and placeholder class libraries for modules (e.g. ZenFlow.Core, ZenFlow.Users, ZenFlow.Workflows).
+## Stage 2: Authentication and Authorization Integration
+**Purpose:** Add Keycloak authentication for frontend and backend.
+**Tasks:**
+* Deploy Keycloak locally via Docker
+* Create a **realm**, **clients** (frontend), **roles** (admin/user) in Keycloak
+* Configure **JWT Bearer Authentication** in .NET backend
+* Configure **NextAuth.js** in frontend to connect to Keycloak (OIDC provider)
+* Implement **useAuth** hook + **AuthContext** in frontend
+* Create **protected routes** in frontend (redirect to login if unauthenticated)
+* Secure basic API endpoints with `[Authorize]` attributes
 
-- **Keycloak Integration**: Install and configure Keycloak (could use Docker). Create a realm, client, and roles. In the backend, configure JWT authentication (OIDC) pointing to Keycloak. In the frontend, implement a login page or redirect flow to Keycloak. Ensure the frontend can obtain and store the token (e.g. in React Context).
+**Expected Output:** ✔️ User can log in via Keycloak ✔️ Frontend receives valid JWT tokens ✔️ Backend authorizes API calls ✔️ Roles (admin/user) available in frontend session
 
-- **Hello World Endpoints**: Create a simple Minimal API endpoint (e.g. /api/hello) to verify the pipeline. Protect it with [Authorize]. Make the frontend call this endpoint with the Keycloak token to display a message.
+## Stage 3: Basic CRUD APIs and Frontend Pages
+**Purpose:** Build first real modules: User Management and Workflows.
+**Tasks:**
+* Backend:
+   * Create **User** Entity and basic CRUD handlers (CreateUserCommand, GetUserQuery, etc.)
+   * Create **Workflow** Entity and basic CRUD handlers (CreateWorkflowCommand, GetWorkflowQuery, etc.)
+* Frontend:
+   * Create pages: `/users`, `/workflows`
+   * Implement Zustand stores (`authStore`, `workflowStore`)
+   * Fetch data with React Query (`useUsers`, `useWorkflows`)
+   * Create forms with React Hook Form for CreateUser and CreateWorkflow
+   * Show toasts (success/error) with React Hot Toast
 
-- **Database Setup**: Add EF Core packages. Configure a PostgreSQL database (local or Docker). Create an initial DbContext in ZenFlow.Core (or a specific module) and run a migration.
+**Expected Output:** ✔️ Admin can create and view users ✔️ User can create and view workflows ✔️ Pages protected by auth ✔️ Good loading and error UX
 
-- **CI/CD Baseline**: (Optional) Set up a simple pipeline to build and test both apps. This could be a GitHub Actions workflow that builds the .NET solution and runs npm run build.
+## Stage 4: Visual Workflow Editor MVP
+**Purpose:** Build basic drag-and-drop workflow editor using React Flow.
+**Tasks:**
+* Setup React Flow canvas inside `/workflows/[workflowId]/edit`
+* Implement basic node types (TriggerNode, ActionNode, ConditionNode)
+* Enable drag-drop from Toolbox → Canvas
+* Enable connecting nodes (edges)
+* Persist workflow graph state to backend (nodes and edges)
+* Add Zustand store (`workflowEditorStore`) to manage editor state
 
-### Stage 2: Core Features and Module Development
+**Expected Output:** ✔️ User can visually create workflows ✔️ Save/load workflows to/from database ✔️ Clean and responsive editor UI
 
-- **User Module**: Implement the User Management module. Define a User entity (name, email, role) in EF Core. Create MediatR handlers for CreateUserCommand, GetUserQuery, etc. Expose corresponding API endpoints (e.g. POST /api/users). Make a frontend page for admin to list/add users. Use Keycloak admin API or database hooks to sync user creation with Keycloak (or rely on Keycloak solely).
+## Stage 5: Workflow Execution and History
+**Purpose:** Enable workflows to be executed and track results.
+**Tasks:**
+* Backend:
+   * Implement WorkflowExecutor service
+   * Execute workflows step-by-step based on nodes and edges
+   * Record execution logs into DB (status, start time, end time, error if any)
+* Frontend:
+   * Create execution panel showing current execution status
+   * Allow manual "Run" button from the editor
+   * View workflow execution history (list of past runs)
 
-- **Workflow Module**: Implement the core "Workflow" module. Define domain models (e.g. Workflow, Task). Create handlers and endpoints for creating and updating workflows. For example, POST /api/workflows sends a CreateWorkflowCommand to MediatR, which saves to DB and publishes a WorkflowCreated event via MassTransit.
+**Expected Output:** ✔️ User can run workflows ✔️ User can see history of past runs ✔️ Errors/success status visible
 
-- **Redis Caching**: Add Redis. For example, implement caching for expensive read queries. E.g., cache the result of GetAllWorkflows for 5 minutes. Use the StackExchange.Redis client. On write, invalidate relevant cache keys.
+## Stage 6: Notifications and Messaging
+**Purpose:** Implement event-driven architecture (publish/subscribe).
+**Tasks:**
+* Configure MassTransit with RabbitMQ in backend
+* Implement Outbox pattern (store outgoing messages in DB)
+* Publish events (e.g., `WorkflowCreatedEvent`, `WorkflowExecutedEvent`)
+* Create a Notifications module:
+   * Subscribe to events
+   * Show notifications in frontend (e.g., workflow run completed)
 
-- **Asynchronous Messaging**: Install MassTransit and RabbitMQ. Configure the outbox on the Workflow module's DbContext. After saving a new workflow, publish an event message. Create a simple Notification module (or inside Workflow) that consumes this event and logs it or sends an email (simulated). Verify that messaging works end-to-end (e.g. by checking console logs or DB outbox tables).
-
-- **Frontend Enhancements**: Build UI for workflows: list existing workflows, create new, mark complete. Use React Query or similar to fetch data from the new endpoints. Use components from components/ for forms/tables. Use contexts/hooks for auth and API calls (e.g. a useApi hook that adds auth header).
-
-### Stage 3: Additional Features & Robustness
-
-- **Notifications Module**: Develop a separate Notifications module that subscribes to events (user created, workflow completed). For example, upon receiving WorkflowCompleted, it might send an email (or simply log to console). Ensure each module has its own service registrations (DI) and message consumers.
-
-- **Redis Session Store (optional)**: Use Redis not just for caching but also as a session store if using server components or to store token info.
-
-- **Unit/Integration Tests**: Write tests for handlers and services. For example, test CreateWorkflowCommandHandler and a consumer for an event. Use an in-memory DB or test container for PostgreSQL.
-
-- **Logging and Monitoring**: Integrate logging (Serilog) in .NET and ensure important actions (login attempts, errors, key events) are logged. Optionally configure health checks and a metrics endpoint (e.g. Prometheus exporter).
-
-- **Frontend Polishing**: Add global styles (CSS or Tailwind). Ensure mobile responsiveness. Improve error handling (show notifications on save success/failure).
-
-### Stage 4: Advanced/Optional Enhancements
-
-- **CI/CD and Deployment**: Refine pipelines. Build Docker images for frontend and backend. Prepare Docker Compose or Kubernetes manifests to deploy the full stack (including Postgres, RabbitMQ, Redis, Keycloak).
-
-- **Performance Testing**: Load test key endpoints and optimize. Possibly implement pagination and filtering for lists.
-
-- **Modular Evolution**: Evaluate splitting modules into separate deploys (microservices). The design of Stage 2 modules should make this easier in the future. Document guidelines for creating new modules.
-
-- **Security Hardening**: Implement rate limiting, content security policies, and other HTTP security headers. Apply Penetration Testing best practices.
-
-Each stage's tasks build on previous work. A junior developer can start by following onboarding (Stage 1), then pick a simple CRUD feature (Stage 2), learn messaging (Stage 3), and finally infrastructure concerns (Stage 4).
+**Expected Output:** ✔️ Modules communicate via RabbitMQ ✔️ Notifications shown in frontend based on backend events
 
 ## 7. Appendix: References and Standards
 

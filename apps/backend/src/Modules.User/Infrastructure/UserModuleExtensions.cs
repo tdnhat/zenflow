@@ -1,43 +1,46 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Modules.User.Services;
+using Modules.User.Data;
+using Modules.User.Data.Interceptors;
 
 namespace Modules.User.Infrastructure
 {
     public static class UserModuleExtensions
     {
-        public static IServiceCollection AddUserModule(this IServiceCollection services)
+        public static IServiceCollection AddUserModule(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddScoped<IUserService, UserService>();
+            // Add services for the User module
+
+            // Add Endpoints for the User module
+
+            // Application Use Case Services
+
+            // Data - Infrastructure Services
+            services.AddDbContext<UserDbContext>((sp, options) =>
+            {
+                options
+                    .UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
+                    .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
+            });
+
+            services.AddScoped<AuditInterceptor>();
 
             return services;
         }
 
         public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
         {
-            var group = endpoints.MapGroup("/api/users").WithTags("Users");
-
-            group.MapGet("/", async (IUserService userService) =>
-            {
-                var users = await userService.GetAllUsersAsync();
-                return Results.Ok(users);
-            })
-                .RequireAuthorization()
-                .WithName("GetAllUsers")
-                .WithOpenApi();
-
-            group.MapGet("/{id:guid}", async (Guid id, IUserService userService) =>
-            {
-                var user = await userService.GetUserByIdAsync(id);
-                return Results.Ok(user);
-            })
-                .RequireAuthorization()
-                .WithName("GetUserById")
-                .WithOpenApi();
-
+            
             return endpoints;
+        }
+
+        public static WebApplication UseUserModule(this WebApplication app)
+        {
+            
+            return app;
         }
     }
 }

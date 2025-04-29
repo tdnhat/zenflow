@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Shared\ZenFlow.Core\ZenFlow.Core.csproj" />
     <ProjectReference Include="..\Shared\ZenFlow.Shared\ZenFlow.Shared.csproj" />
   </ItemGroup>
 

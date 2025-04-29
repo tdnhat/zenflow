@@ -2,12 +2,6 @@
 bin/
 obj/
 
-# User-specific files
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-
 # OS generated files
 .DS_Store
 Thumbs.db
@@ -71,3 +65,7 @@ Migrations/
 # Docker related
 **/docker-compose.override.yml
 docker-compose.override.yml
+
+# Modules.User specific exclusions
+Modules.User/bin/
+Modules.User/obj/

@@ -12,7 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .post("/users")
+                .get("/users/me")
                 .then((response) => {
                     setApiMessage(response.data.message);
                 })

@@ -15,8 +15,8 @@ namespace Modules.User.Endpoints
         public void AddRoutes(IEndpointRouteBuilder app)
         {
             app.MapPost("/", async (
-                [FromServices] ISender sender,
-                [FromServices] ICurrentUserService currentUser) =>
+                ISender sender,
+                ICurrentUserService currentUser) =>
             {
                 if (currentUser.UserId is null || currentUser.Email is null)
                     return Results.Unauthorized();

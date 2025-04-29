@@ -84,7 +84,26 @@ public static class AppBuilderExtensions
                 }
             });
 
-        builder.Services.AddAuthorization();
+        builder.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("AdminPolicy", policy =>
+            {
+                policy.RequireAuthenticatedUser();
+                policy.RequireAssertion(context =>
+                {
+                    var rolesClaim = context.User.FindFirst("realm_access")?.Value;
+                    if (rolesClaim != null)
+                    {
+                        var roles = System.Text.Json.JsonDocument.Parse(rolesClaim)
+                            .RootElement.GetProperty("roles")
+                            .EnumerateArray()
+                            .Select(role => role.GetString());
+                        return roles.Contains("admin");
+                    }
+                    return false;
+                });
+            });
+        });
 
         return builder;
     }

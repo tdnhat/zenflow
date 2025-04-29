@@ -25,5 +25,11 @@ namespace Modules.User.Repositories
             await _context.Users.AddAsync(user, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<List<DDD.Entities.User>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _context.Users.AsNoTracking()
+                .ToListAsync(cancellationToken);
+        }
     }   
 }

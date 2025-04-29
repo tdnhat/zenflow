@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Carter;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Modules.User.Data;
 using Modules.User.Data.Interceptors;
+using Modules.User.DDD.Interfaces;
+using Modules.User.Repositories;
 
 namespace Modules.User.Infrastructure
 {
@@ -27,19 +30,23 @@ namespace Modules.User.Infrastructure
             });
 
             services.AddScoped<AuditInterceptor>();
+            services.AddScoped<IUserRepository, UserRepository>();
 
             return services;
         }
 
         public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
         {
-            
+            // Map endpoints for the User module
+            var apiGroup = endpoints.MapGroup("/api/v1/users");
+            apiGroup.MapCarter();
+
             return endpoints;
         }
 
         public static WebApplication UseUserModule(this WebApplication app)
         {
-            
+
             return app;
         }
     }

@@ -12,7 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .get("/users")
+                .get("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d")
                 .then((response) => {
                     setApiMessage(response.data.message);
                 })

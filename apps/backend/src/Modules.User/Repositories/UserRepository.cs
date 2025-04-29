@@ -31,5 +31,12 @@ namespace Modules.User.Repositories
             return await _context.Users.AsNoTracking()
                 .ToListAsync(cancellationToken);
         }
+
+        public async Task<DDD.Entities.User?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+        }
     }   
 }

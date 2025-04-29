@@ -6,6 +6,7 @@
 # dotenv files
 .env
 
+<<<<<<< Updated upstream
 # User-specific files
 *.rsuser
 *.suo
@@ -15,6 +16,11 @@
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
+=======
+# OS generated files
+.DS_Store
+Thumbs.db
+>>>>>>> Stashed changes
 
 # Mono auto generated files
 mono_crash.*

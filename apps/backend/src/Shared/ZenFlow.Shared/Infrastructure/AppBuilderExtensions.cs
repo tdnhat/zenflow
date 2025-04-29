@@ -2,6 +2,12 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+<<<<<<< Updated upstream
+=======
+using Microsoft.OpenApi.Models;
+using ZenFlow.Shared.Application.Auth;
+using ZenFlow.Shared.Infrastructure.Auth;
+>>>>>>> Stashed changes
 
 namespace ZenFlow.Shared.Infrastructure;
 
@@ -9,6 +15,10 @@ public static class AppBuilderExtensions
 {
     public static WebApplicationBuilder AddCoreServices(this WebApplicationBuilder builder)
     {
+        // Add HTTP context accessor for dependency injection
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+
         // Common services used across modules
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();

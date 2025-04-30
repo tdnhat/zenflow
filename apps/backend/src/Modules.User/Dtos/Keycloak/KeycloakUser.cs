@@ -1,9 +1,12 @@
-﻿namespace Modules.User.Dtos.Keycloak
-{
-    public class KeycloakUser
-    {
-        public string Id { get; set; } = default!;
-        public string Username { get; set; } = default!;
-    }
+﻿using System.Collections.Generic;
 
+namespace Modules.User.Dtos.Keycloak
+{
+    public record KeycloakUser(
+        string Id,
+        string Username,
+        string Email,
+        bool Enabled,
+        List<string> RealmRoles
+    );
 }

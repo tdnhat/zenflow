@@ -20,8 +20,10 @@ namespace Modules.User.Infrastructure
         public static IServiceCollection AddUserModule(this IServiceCollection services, IConfiguration configuration)
         {
             // Register Keycloak settings from configuration
-            var keycloakSettings = configuration.GetSection("Keycloak").Get<KeycloakSettings>();
-            services.AddSingleton(keycloakSettings ?? new KeycloakSettings());
+            services.AddOptions<KeycloakSettings>()
+                .Bind(configuration.GetSection("Keycloak"))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
             // Register the Keycloak token service with retry and circuit breaker policies
             services.AddHttpClient<KeycloakTokenService>()
@@ -63,6 +65,7 @@ namespace Modules.User.Infrastructure
 
             return endpoints;
         }
+
 
         public static WebApplication UseUserModule(this WebApplication app)
         {

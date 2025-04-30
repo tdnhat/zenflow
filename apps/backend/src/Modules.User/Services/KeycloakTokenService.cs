@@ -30,6 +30,18 @@ namespace Modules.User.Services
                 ?? throw new ArgumentException("Keycloak settings missing");
         }
 
+        public async Task<string> ForceTokenRefreshAsync()
+        {
+            _logger.LogDebug("Forcing refresh of Keycloak admin token");
+
+            // Clear the cached token
+            _cachedAdminToken = null;
+            _tokenExpiryTime = DateTime.MinValue;
+
+            // Request a new token
+            return await GetAdminTokenAsync();
+        }
+
         /// Gets a valid admin token, either from cache or by requesting a new one
         public async Task<string> GetAdminTokenAsync()
         {

@@ -69,8 +69,18 @@ namespace Modules.User.Repositories
 
         public async Task PermanentlyDeleteAsync(DDD.Entities.User user, CancellationToken cancellationToken = default)
         {
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync(cancellationToken);
+            var userId = user.Id;
+            
+            // Detach the entity if it's being tracked to prevent conflicts
+            var entry = _context.Entry(user);
+            if (entry.State != EntityState.Detached)
+            {
+                entry.State = EntityState.Detached;
+            }
+            
+            // Use direct SQL to permanently delete and bypass interceptors
+            await _context.Database.ExecuteSqlInterpolatedAsync(
+                $"DELETE FROM \"user\".\"Users\" WHERE \"Id\" = {userId}", cancellationToken);
         }
 
         public async Task RestoreAsync(Guid id, CancellationToken cancellationToken = default)

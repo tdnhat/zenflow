@@ -6,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;  // Added for FromQuery
 using Microsoft.AspNetCore.Routing;
 using Modules.User.Features.DeleteUserById;
 using Modules.User.Infrastructure.Exceptions;
-using System;
 
 namespace Modules.User.Endpoints
 {

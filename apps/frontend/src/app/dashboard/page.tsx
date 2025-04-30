@@ -12,12 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .delete("/users/23c41a4e-d6cb-4923-8d9b-9868cc51cccc?permanent=true", {
-                // .get("/users/me", {
-                    // username: "newTestUser",
-                    // roles: ["user"],
-                    // isActive: true,
-                })
+                .get("/users/me", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })

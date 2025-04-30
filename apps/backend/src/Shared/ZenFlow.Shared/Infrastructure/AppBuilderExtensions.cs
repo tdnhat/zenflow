@@ -1,10 +1,8 @@
-﻿using Carter;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using System.Reflection;
 using ZenFlow.Shared.Application.Auth;
 using ZenFlow.Shared.Infrastructure.Auth;
 

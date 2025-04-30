@@ -9,6 +9,8 @@ using Modules.User.Data.Interceptors;
 using Modules.User.DDD.Interfaces;
 using Modules.User.Repositories;
 using Modules.User.Services;
+using Polly;
+using Polly.Extensions.Http;
 using ZenFlow.Shared.Configurations;
 
 namespace Modules.User.Infrastructure
@@ -20,6 +22,11 @@ namespace Modules.User.Infrastructure
             // Register Keycloak settings from configuration
             var keycloakSettings = configuration.GetSection("Keycloak").Get<KeycloakSettings>();
             services.AddSingleton(keycloakSettings ?? new KeycloakSettings());
+
+            // Register the Keycloak token service with retry and circuit breaker policies
+            services.AddHttpClient<KeycloakTokenService>()
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
 
             // Data infrastructure services
             services.AddDbContext<UserDbContext>((sp, options) =>
@@ -60,6 +67,21 @@ namespace Modules.User.Infrastructure
         public static WebApplication UseUserModule(this WebApplication app)
         {
             return app;
+        }
+
+        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .OrResult(msg => msg.StatusCode == System.Net.HttpStatusCode.NotFound)
+                .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+        }
+
+        private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
+        {
+            return HttpPolicyExtensions
+                .HandleTransientHttpError()
+                .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30));
         }
     }
 }

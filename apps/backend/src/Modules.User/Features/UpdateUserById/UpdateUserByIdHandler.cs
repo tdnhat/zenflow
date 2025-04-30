@@ -36,8 +36,6 @@ public class UpdateUserByIdHandler : IRequestHandler<UpdateUserByIdCommand, User
 
         try
         {
-            // Update user properties one by one to maintain proper synchronization with Keycloak
-
             // 1. Update username (and sync to Keycloak)
             if (!string.IsNullOrWhiteSpace(request.Username) && user.Username != request.Username)
             {

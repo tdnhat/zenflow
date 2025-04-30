@@ -12,6 +12,7 @@ namespace ZenFlow.Shared.Configurations
         public string AdminClientId { get; set; } = default!;
         [Required(ErrorMessage = "ClientSecret is required.")]
         public string AdminClientSecret { get; set; } = default!;
+        public KeycloakSettings() { }
 
         // Computed property for the admin API URL
         public string AdminApiUrl => $"{BaseUrl.TrimEnd('/')}/admin/realms/{Realm}";

@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using ZenFlow.Shared.Domain;
 
 namespace Modules.User.Data
 {
@@ -13,7 +15,28 @@ namespace Modules.User.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasDefaultSchema("user");
+
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(UserDbContext).Assembly);
+
+            // Apply global filters for soft delete
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
+                {
+                    var parameter = Expression.Parameter(entityType.ClrType, "p");
+                    var propertyMethodInfo = typeof(EF).GetMethod(nameof(EF.Property))!
+                        .MakeGenericMethod(typeof(bool));
+                    var isDeletedProperty = Expression.Call(propertyMethodInfo,
+                        parameter,
+                        Expression.Constant(nameof(ISoftDelete.IsDeleted)));
+
+                    var notDeletedExpression = Expression.Not(isDeletedProperty);
+                    var lambda = Expression.Lambda(notDeletedExpression, parameter);
+
+                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+                }
+            }
+
             base.OnModelCreating(modelBuilder);
         }
     }

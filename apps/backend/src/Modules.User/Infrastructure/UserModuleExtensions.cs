@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Modules.User.Data;
 using Modules.User.Data.Interceptors;
 using Modules.User.DDD.Interfaces;
@@ -25,6 +26,8 @@ namespace Modules.User.Infrastructure
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
+            services.AddSingleton(sp => sp.GetRequiredService<IOptions<KeycloakSettings>>().Value);
+
             // Register the Keycloak token service with retry and circuit breaker policies
             services.AddHttpClient<KeycloakTokenService>()
                 .AddPolicyHandler(GetRetryPolicy())
@@ -40,13 +43,24 @@ namespace Modules.User.Infrastructure
 
             services.AddScoped<AuditInterceptor>();
             services.AddScoped<IUserRepository, UserRepository>();
-            
+
             // Register Keycloak services with proper dependency injection
             // 1. First register HttpClient for each service that needs it
-            services.AddHttpClient<KeycloakTokenService>();
-            services.AddHttpClient<KeycloakHttpClient>();
-            services.AddHttpClient<KeycloakRoleService>();
-            services.AddHttpClient<KeycloakAdminService>();
+            services.AddHttpClient<KeycloakTokenService>()
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+            services.AddHttpClient<KeycloakHttpClient>()
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+            services.AddHttpClient<KeycloakRoleService>()
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
+
+            services.AddHttpClient<KeycloakAdminService>()
+                .AddPolicyHandler(GetRetryPolicy())
+                .AddPolicyHandler(GetCircuitBreakerPolicy());
 
             // 2. Then register each service with its interface
             services.AddScoped<IKeycloakTokenService, KeycloakTokenService>();

@@ -11,10 +11,10 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
-            // Test PUT /api/v1/users/{id} with only username field
             apiClient
-                .put("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d", {
-                    username: "newTestUser",
+                .delete("/users/23c41a4e-d6cb-4923-8d9b-9868cc51cccc?permanent=true", {
+                // .get("/users/me", {
+                    // username: "newTestUser",
                     // roles: ["user"],
                     // isActive: true,
                 })

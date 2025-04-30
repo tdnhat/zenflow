@@ -38,5 +38,11 @@ namespace Modules.User.Repositories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
+
+        public async Task UpdateAsync(DDD.Entities.User user, CancellationToken cancellationToken = default)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }   
 }

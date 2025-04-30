@@ -8,6 +8,7 @@ using Modules.User.Data;
 using Modules.User.Data.Interceptors;
 using Modules.User.DDD.Interfaces;
 using Modules.User.Repositories;
+using Modules.User.Services;
 
 namespace Modules.User.Infrastructure
 {
@@ -31,6 +32,8 @@ namespace Modules.User.Infrastructure
 
             services.AddScoped<AuditInterceptor>();
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>();
+            services.AddHttpClient<IKeycloakTokenService, KeycloakTokenService>();
 
             return services;
         }

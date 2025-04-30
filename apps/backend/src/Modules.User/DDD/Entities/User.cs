@@ -6,9 +6,10 @@ namespace Modules.User.DDD.Entities
     public class User : Aggregate<Guid>
     {
         public string ExternalId { get; private set; } = default!;
-        public string Username { get; private set; } = default!;
+        // Add setter for Username to allow updates
+        public string Username { get; set; } = default!;
         public string Email { get; private set; } = default!;
-        public User() { }
+        public User() { } // Parameterless constructor for EF Core
         public static User Create(string externalId, string username, string email)
         {
             var user = new User
@@ -22,6 +23,13 @@ namespace Modules.User.DDD.Entities
             // Raise domain event
             user.AddDomainEvent(new UserCreatedEvent(user.Id, user.Username));
             return user;
+        }
+        public void Update(string username)
+        {
+            Username = username;
+
+            // Raise domain event for username change
+            AddDomainEvent(new UserUpdatedEvent(Id, username));
         }
     }
 }

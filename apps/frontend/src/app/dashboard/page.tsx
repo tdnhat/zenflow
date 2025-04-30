@@ -11,14 +11,19 @@ export default function Dashboard() {
 
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
+            // Test PUT /api/v1/users/{id} with only username field
             apiClient
-                .get("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d")
+                .put("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d", {
+                    username: "testUser",
+                    roles: ["user"],
+                    isActive: true,
+                })
                 .then((response) => {
-                    setApiMessage(response.data.message);
+                    setApiMessage(JSON.stringify(response.data));
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to fetch data from API");
+                    setError("Failed to update user");
                 });
         }
     }, [isLoading, isAuthenticated]);

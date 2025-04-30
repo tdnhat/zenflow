@@ -13,8 +13,8 @@ export default function Dashboard() {
         if (!isLoading && isAuthenticated) {
             // Test PUT /api/v1/users/{id} with only username field
             apiClient
-                .delete("/users/03446ac5-3c17-4ebd-b2c2-fc5fcca0cec4", {
-                    // username: "testUser",
+                .put("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d", {
+                    username: "newTestUser",
                     // roles: ["user"],
                     // isActive: true,
                 })
@@ -23,7 +23,7 @@ export default function Dashboard() {
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to delete user");
+                    setError("Failed to fetch user data");
                 });
         }
     }, [isLoading, isAuthenticated]);
@@ -64,7 +64,9 @@ export default function Dashboard() {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold mb-4 text-black">API Response</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">
+                    API Response
+                </h2>
                 {error ? (
                     <p className="text-red-500">{error}</p>
                 ) : apiMessage ? (

@@ -36,18 +36,17 @@ namespace Modules.User.Services
         {
             try
             {
+                // First attempt with current token
                 var token = await _tokenService.GetAdminTokenAsync();
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await ExecuteRequestAsync(method, url, data, token);
 
-                using var request = new HttpRequestMessage(method, url);
-
-                if (data != null && method != HttpMethod.Get)
+                // If unauthorized, refresh token and try once more
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    var json = JsonSerializer.Serialize(data, _jsonOptions);
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    _logger.LogWarning("Received 401 Unauthorized from Keycloak API. Refreshing token and retrying.");
+                    token = await _tokenService.ForceTokenRefreshAsync();
+                    response = await ExecuteRequestAsync(method, url, data, token);
                 }
-
-                var response = await _httpClient.SendAsync(request);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -69,20 +68,21 @@ namespace Modules.User.Services
         {
             try
             {
+                // First attempt with current token
                 var token = await _tokenService.GetAdminTokenAsync();
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                var response = await ExecuteRequestAsync(method, url, data, token);
 
-                using var request = new HttpRequestMessage(method, url);
-
-                if (data != null && method != HttpMethod.Get)
+                // If unauthorized, refresh token and try once more
+                if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
-                    var json = JsonSerializer.Serialize(data, _jsonOptions);
-                    request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+                    _logger.LogWarning("Received 401 Unauthorized from Keycloak API. Refreshing token and retrying.");
+                    token = await _tokenService.ForceTokenRefreshAsync();
+                    response = await ExecuteRequestAsync(method, url, data, token);
                 }
 
-                return await _httpClient.SendAsync(request);
+                return response;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not KeycloakApiException)
             {
                 _logger.LogError(ex, "Error making request to Keycloak API");
                 throw new KeycloakApiException($"Request failed: {method} {url}", ex);
@@ -91,5 +91,21 @@ namespace Modules.User.Services
         
         /// Gets the JSON serializer options used for Keycloak API requests
         public JsonSerializerOptions JsonOptions => _jsonOptions;
+
+        /// Helper method to execute the actual HTTP request
+        private async Task<HttpResponseMessage> ExecuteRequestAsync<T>(HttpMethod method, string url, T data, string token)
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+            using var request = new HttpRequestMessage(method, url);
+
+            if (data != null && method != HttpMethod.Get)
+            {
+                var json = JsonSerializer.Serialize(data, _jsonOptions);
+                request.Content = new StringContent(json, Encoding.UTF8, "application/json");
+            }
+
+            return await _httpClient.SendAsync(request);
+        }
     }
 }

@@ -7,5 +7,6 @@
     {
         /// Gets a valid admin token for Keycloak API operations
         Task<string> GetAdminTokenAsync();
+        Task<string> ForceTokenRefreshAsync();
     }
 }

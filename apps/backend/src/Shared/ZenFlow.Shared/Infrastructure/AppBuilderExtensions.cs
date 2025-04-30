@@ -22,7 +22,11 @@ public static class AppBuilderExtensions
         // Configure Swagger with authentication
         builder.Services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { Title = "ZenFlow API", Version = "v1" });
+            options.SwaggerDoc("v1", new OpenApiInfo { 
+                Title = "ZenFlow API",
+                Version = "v1",
+                Description = "API for ZenFlow application"
+            });
 
             // Add JWT authentication support to Swagger
             options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

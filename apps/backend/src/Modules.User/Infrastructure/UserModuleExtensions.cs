@@ -1,10 +1,15 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Carter;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Modules.User.Data;
 using Modules.User.Data.Interceptors;
+using Modules.User.DDD.Interfaces;
+using Modules.User.Repositories;
+using Modules.User.Services;
+using ZenFlow.Shared.Configurations;
 
 namespace Modules.User.Infrastructure
 {
@@ -12,13 +17,11 @@ namespace Modules.User.Infrastructure
     {
         public static IServiceCollection AddUserModule(this IServiceCollection services, IConfiguration configuration)
         {
-            // Add services for the User module
+            // Register Keycloak settings from configuration
+            var keycloakSettings = configuration.GetSection("Keycloak").Get<KeycloakSettings>();
+            services.AddSingleton(keycloakSettings ?? new KeycloakSettings());
 
-            // Add Endpoints for the User module
-
-            // Application Use Case Services
-
-            // Data - Infrastructure Services
+            // Data infrastructure services
             services.AddDbContext<UserDbContext>((sp, options) =>
             {
                 options
@@ -27,19 +30,35 @@ namespace Modules.User.Infrastructure
             });
 
             services.AddScoped<AuditInterceptor>();
+            services.AddScoped<IUserRepository, UserRepository>();
+            
+            // Register Keycloak services with proper dependency injection
+            // 1. First register HttpClient for each service that needs it
+            services.AddHttpClient<KeycloakTokenService>();
+            services.AddHttpClient<KeycloakHttpClient>();
+            services.AddHttpClient<KeycloakRoleService>();
+            services.AddHttpClient<KeycloakAdminService>();
+
+            // 2. Then register each service with its interface
+            services.AddScoped<IKeycloakTokenService, KeycloakTokenService>();
+            services.AddScoped<IKeycloakHttpClient, KeycloakHttpClient>();
+            services.AddScoped<IKeycloakRoleService, KeycloakRoleService>();
+            services.AddScoped<IKeycloakAdminService, KeycloakAdminService>();
 
             return services;
         }
 
         public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
         {
-            
+            // Map endpoints for the User module
+            var apiGroup = endpoints.MapGroup("/api/v1/users");
+            apiGroup.MapCarter();
+
             return endpoints;
         }
 
         public static WebApplication UseUserModule(this WebApplication app)
         {
-            
             return app;
         }
     }

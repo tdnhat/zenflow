@@ -2,8 +2,12 @@
 using Modules.User.DDD.Interfaces;
 using Modules.User.Dtos.Keycloak;
 using Modules.User.Infrastructure.Exceptions;
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Threading.Tasks;
 using ZenFlow.Shared.Configurations;
 
 namespace Modules.User.Services
@@ -207,6 +211,38 @@ namespace Modules.User.Services
             {
                 _logger.LogError(ex, "Error updating username for user {UserId}", keycloakId);
                 throw new KeycloakApiException($"Failed to update username for user {keycloakId}", ex);
+            }
+        }
+
+        public async Task DeleteUserAsync(string keycloakId)
+        {
+            _logger.LogDebug("Deleting user {UserId} from Keycloak", keycloakId);
+
+            try
+            {
+                var requestUrl = $"{_settings.AdminApiUrl}/users/{keycloakId}";
+                
+                // Use SendApiRequestWithResponseAsync instead of SendApiRequestAsync for DELETE requests
+                var response = await _keycloakHttp.SendApiRequestWithResponseAsync(HttpMethod.Delete, requestUrl);
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("Failed to delete Keycloak user {UserId}. Status: {Status}, Error: {Error}",
+                        keycloakId, response.StatusCode, errorContent);
+                    throw new KeycloakApiException($"Failed to delete user {keycloakId}", response.StatusCode, errorContent);
+                }
+                
+                _logger.LogInformation("Successfully deleted user {UserId} from Keycloak", keycloakId);
+            }
+            catch (KeycloakApiException)
+            {
+                throw; // Already logged
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting user {UserId} from Keycloak", keycloakId);
+                throw new KeycloakApiException($"Failed to delete user {keycloakId}", ex);
             }
         }
     }

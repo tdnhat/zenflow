@@ -31,5 +31,11 @@ namespace Modules.User.DDD.Entities
             // Raise domain event for username change
             AddDomainEvent(new UserUpdatedEvent(Id, username));
         }
+
+        public void MarkDeleted()
+        {
+            // Raise domain event for user deletion
+            AddDomainEvent(new UserDeletedEvent(Id, Username));
+        }
     }
 }

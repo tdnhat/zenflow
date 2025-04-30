@@ -15,7 +15,8 @@ namespace Modules.User.Endpoints
             app.MapPut("/{id:guid}", async (
                 Guid id,
                 UpdateUserRequest request,
-                ISender sender) =>
+                ISender sender,
+                CancellationToken cancellationToken) =>
             {
                 var command = new UpdateUserByIdCommand(
                     id,
@@ -24,7 +25,7 @@ namespace Modules.User.Endpoints
                     request.IsActive
                 );
 
-                var result = await sender.Send(command);
+                var result = await sender.Send(command, cancellationToken);
                 return result is null ? Results.NotFound() : Results.Ok(result);
             })
             .RequireAuthorization("AdminPolicy")

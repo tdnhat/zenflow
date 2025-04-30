@@ -44,5 +44,11 @@ namespace Modules.User.Repositories
             _context.Users.Update(user);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task DeleteAsync(DDD.Entities.User user, CancellationToken cancellationToken = default)
+        {
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }   
 }

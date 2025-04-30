@@ -13,17 +13,17 @@ export default function Dashboard() {
         if (!isLoading && isAuthenticated) {
             // Test PUT /api/v1/users/{id} with only username field
             apiClient
-                .put("/users/eef7ddb4-7cd7-4b2f-88ab-55bd14f9479d", {
-                    username: "testUser",
-                    roles: ["user"],
-                    isActive: true,
+                .delete("/users/03446ac5-3c17-4ebd-b2c2-fc5fcca0cec4", {
+                    // username: "testUser",
+                    // roles: ["user"],
+                    // isActive: true,
                 })
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to update user");
+                    setError("Failed to delete user");
                 });
         }
     }, [isLoading, isAuthenticated]);
@@ -64,11 +64,11 @@ export default function Dashboard() {
             </div>
 
             <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold mb-4">API Response</h2>
+                <h2 className="text-xl font-bold mb-4 text-black">API Response</h2>
                 {error ? (
                     <p className="text-red-500">{error}</p>
                 ) : apiMessage ? (
-                    <p>{apiMessage}</p>
+                    <p className="text-black">{apiMessage}</p>
                 ) : (
                     <p>Loading API data...</p>
                 )}

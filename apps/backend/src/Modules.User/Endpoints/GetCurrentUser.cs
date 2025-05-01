@@ -13,7 +13,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/me", async (
+            app.MapGet("/api/users/me", async (
                 ISender sender,
                 ICurrentUserService currentUser) =>
             {
@@ -32,7 +32,7 @@ namespace Modules.User.Endpoints
             .Produces<UserDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status401Unauthorized)
             .WithTags("Users")
-            .WithName("GetCurrentUser")
+            .WithName("Users_GetCurrentUser")
             .RequireAuthorization();
         }
     }

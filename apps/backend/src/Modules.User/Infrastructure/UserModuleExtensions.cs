@@ -1,5 +1,6 @@
 ﻿using Carter;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -73,9 +74,12 @@ namespace Modules.User.Infrastructure
 
         public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
         {
-            // Map endpoints for the User module
-            var apiGroup = endpoints.MapGroup("/api/v1/users");
-            apiGroup.MapCarter();
+            var group = endpoints
+                .MapGroup("/api/v1/users")
+                .WithTags("Users");
+
+            // Use Carter with this specific group
+            group.MapCarter();
 
             return endpoints;
         }

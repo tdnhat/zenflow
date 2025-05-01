@@ -1,5 +1,7 @@
+using Carter;
 using Modules.User.Endpoints;
 using Modules.User.Infrastructure;
+using Modules.Workflow.Data;
 using Modules.Workflow.Infrastructure;
 using ZenFlow.Shared.Extensions;
 using ZenFlow.Shared.Infrastructure;
@@ -9,10 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 // Add core services
 builder.AddCoreServices();
 
-var userAssembly = typeof(CreateUser).Assembly;
+var userAssembly = typeof(UserModuleExtensions).Assembly;
+var workflowAssembly = typeof(WorkflowModuleExtensions).Assembly;
 builder.Services
-    .AddCarterWithAssemblies(userAssembly)
-    .AddMediatRWithAssemblies(userAssembly);
+    .AddCarterWithAssemblies(userAssembly, workflowAssembly)
+    .AddMediatRWithAssemblies(userAssembly, workflowAssembly);
 
 // Register module services
 builder.Services
@@ -30,9 +33,11 @@ app
     .UseWorkflowModule();
 
 // Map endpoints
-app
-    .MapUserEndpoints()
-    .MapWorkflowEndpoints();
+// app
+//     .MapUserEndpoints()
+//     .MapWorkflowEndpoints();
+
+app.MapCarter();
 
 // Run the application
 app.Run();

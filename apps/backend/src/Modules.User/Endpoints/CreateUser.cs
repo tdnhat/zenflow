@@ -14,7 +14,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/", async (
+            app.MapPost("/api/users/", async (
                 ISender sender,
                 ICurrentUserService currentUser) =>
             {
@@ -33,7 +33,7 @@ namespace Modules.User.Endpoints
             .Produces<UserDto>(StatusCodes.Status201Created)
             .Produces(StatusCodes.Status401Unauthorized)
             .WithTags("Users")
-            .WithName("CreateUser")
+            .WithName("Users_CreateUser")
             .RequireAuthorization();
         }
     }

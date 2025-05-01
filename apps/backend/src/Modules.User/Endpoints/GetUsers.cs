@@ -12,7 +12,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/", async (
+            app.MapGet("/api/users/", async (
                 ISender sender) =>
             {
                 var result = await sender.Send(new GetUsersQuery());
@@ -22,7 +22,7 @@ namespace Modules.User.Endpoints
             .Produces(StatusCodes.Status401Unauthorized)
             .Produces(StatusCodes.Status403Forbidden)
             .WithTags("Users")
-            .WithName("GetUsers")
+            .WithName("Users_GetUsers")
             .RequireAuthorization("AdminPolicy");
         }
     }

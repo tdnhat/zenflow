@@ -11,15 +11,15 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPut("/{id:guid}/restore", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
+            app.MapPut("/api/users/{id:guid}/restore", async (Guid id, ISender sender, CancellationToken cancellationToken) =>
             {
                 var command = new RestoreUserByIdCommand(id);
                 await sender.Send(command, cancellationToken);
                 return Results.NoContent();
             })
             .RequireAuthorization("AdminPolicy")
-            .WithTags("User")
-            .WithName("RestoreUserById")
+            .WithTags("Users")
+            .WithName("Users_RestoreUserById")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status400BadRequest);

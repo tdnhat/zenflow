@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace Modules.Workflow.Services.NodeManagement
+namespace Modules.Workflow.Services.Validation
 {
     public interface INodeConfigValidator
     {

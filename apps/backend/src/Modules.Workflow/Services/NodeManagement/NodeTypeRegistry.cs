@@ -1,6 +1,6 @@
 using Modules.Workflow.Dtos;
 
-namespace Modules.Workflow.Services.Validation
+namespace Modules.Workflow.Services.NodeManagement
 {
     public interface INodeTypeRegistry
     {

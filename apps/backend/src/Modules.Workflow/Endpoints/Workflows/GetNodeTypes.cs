@@ -2,7 +2,7 @@ using Carter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Modules.Workflow.Services.Validation;
+using Modules.Workflow.Services.NodeManagement;
 
 namespace Modules.Workflow.Endpoints.Workflows
 {

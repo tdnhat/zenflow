@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Services.NodeManagement;
+using Modules.Workflow.Services.Validation;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.Workflows.ValidateWorkflow

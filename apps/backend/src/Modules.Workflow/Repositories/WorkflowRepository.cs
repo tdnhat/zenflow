@@ -26,5 +26,12 @@ namespace Modules.Workflow.Repositories
                 .Where(w => w.CreatedBy == userId)
                 .ToListAsync(cancellationToken);
         }
+        
+        public async Task<DDD.Entities.Workflow?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _context.Workflows
+                .AsNoTracking()
+                .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
+        }
     }
 }

@@ -12,7 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .get("/workflows", {
+                .get("/workflows/05f6dc37-2e12-4ed4-917d-b91dfc7402ed", {
                     // name: "Test Workflow 1",
                     // description: "This is a test workflow",
                 })

@@ -36,6 +36,8 @@ namespace Modules.Workflow.Data
         public DbSet<DDD.Entities.Workflow> Workflows => Set<DDD.Entities.Workflow>();
         public DbSet<DDD.Entities.WorkflowNode> WorkflowNodes => Set<DDD.Entities.WorkflowNode>();
         public DbSet<DDD.Entities.WorkflowEdge> WorkflowEdges => Set<DDD.Entities.WorkflowEdge>();
+        public DbSet<DDD.Entities.WorkflowExecution> WorkflowExecutions => Set<DDD.Entities.WorkflowExecution>();
+        public DbSet<DDD.Entities.NodeExecution> NodeExecutions => Set<DDD.Entities.NodeExecution>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

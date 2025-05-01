@@ -30,6 +30,8 @@ namespace Modules.Workflow.Infrastructure
             services.AddScoped<IWorkflowRepository, WorkflowRepository>();
             services.AddScoped<IWorkflowNodeRepository, WorkflowNodeRepository>();
             services.AddScoped<IWorkflowEdgeRepository, WorkflowEdgeRepository>();
+            services.AddScoped<IWorkflowExecutionRepository, WorkflowExecutionRepository>();
+            services.AddScoped<INodeExecutionRepository, NodeExecutionRepository>();
             services.AddScoped<INodeConfigValidator, NodeConfigValidator>();
             services.AddScoped<INodeTypeRegistry, NodeTypeRegistry>();
 

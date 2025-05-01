@@ -61,7 +61,7 @@ namespace Modules.Workflow.Repositories
             // Apply filters
             if (!filter.IncludeArchived)
             {
-                query = query.Where(w => w.Status != WorkflowStatus.Archived);
+                query = query.Where(w => w.Status != WorkflowStatus.ARCHIVED);
             }
 
             if (!string.IsNullOrWhiteSpace(filter.Status))

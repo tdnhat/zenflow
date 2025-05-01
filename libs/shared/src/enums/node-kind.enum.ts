@@ -1,10 +1,29 @@
 /**
- * Represents the different kinds of nodes available in the workflow editor
+ * Defines the core kinds of nodes that can be used in workflows
  */
 export enum NodeKind {
-  TRIGGER = 'TRIGGER',     // Starting point of a workflow (e.g., webhook, timer, event)
-  ACTION = 'ACTION',       // Performs a specific operation (e.g., API call, data transformation)
-  CONDITION = 'CONDITION', // Decision point that directs flow based on conditions
-  LOOP = 'LOOP',           // Repeats a set of actions based on a collection or condition
-  CONNECTOR = 'CONNECTOR'  // Connects to external services (e.g., database, API)
+  /**
+   * Trigger nodes start a workflow execution (e.g., Webhook, Timer)
+   */
+  TRIGGER = 'TRIGGER',
+  
+  /**
+   * Action nodes perform a task (e.g., HTTP request, Transform data)
+   */
+  ACTION = 'ACTION',
+  
+  /**
+   * Condition nodes create branches in workflow execution (e.g., If condition)
+   */
+  CONDITION = 'CONDITION',
+  
+  /**
+   * Loop nodes iterate over collections or repeat tasks (e.g., ForEach)
+   */
+  LOOP = 'LOOP',
+  
+  /**
+   * Connector nodes provide integration with external systems (e.g., Database)
+   */
+  CONNECTOR = 'CONNECTOR'
 }

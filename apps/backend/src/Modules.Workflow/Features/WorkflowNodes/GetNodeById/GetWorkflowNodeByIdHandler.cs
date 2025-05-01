@@ -66,6 +66,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.GetNodeById
             return new WorkflowNodeDto(
                 node.Id,
                 node.NodeType,
+                node.NodeKind,
                 node.Label,
                 node.X,
                 node.Y,

@@ -49,6 +49,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
             var node = WorkflowNode.Create(
                 request.WorkflowId,
                 request.NodeType,
+                request.NodeKind,
                 request.X,
                 request.Y,
                 request.Label,
@@ -63,6 +64,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
             return new WorkflowNodeDto(
                 node.Id,
                 node.NodeType,
+                node.NodeKind,
                 node.Label,
                 node.X,
                 node.Y,

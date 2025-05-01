@@ -2,7 +2,7 @@
 using Modules.Workflow.Data;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
-using Modules.Workflow.Features.GetWorkflows;
+using Modules.Workflow.Features.Workflows.GetWorkflows;
 using ZenFlow.Shared.Application.Models;
 
 namespace Modules.Workflow.Repositories

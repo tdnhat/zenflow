@@ -72,19 +72,6 @@ namespace Modules.User.Infrastructure
             return services;
         }
 
-        public static IEndpointRouteBuilder MapUserEndpoints(this IEndpointRouteBuilder endpoints)
-        {
-            var group = endpoints
-                .MapGroup("/api/v1/users")
-                .WithTags("Users");
-
-            // Use Carter with this specific group
-            group.MapCarter();
-
-            return endpoints;
-        }
-
-
         public static WebApplication UseUserModule(this WebApplication app)
         {
             return app;

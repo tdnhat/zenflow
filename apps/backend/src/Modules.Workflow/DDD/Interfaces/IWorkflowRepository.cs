@@ -1,4 +1,4 @@
-﻿using Modules.Workflow.Features.GetWorkflows;
+﻿using Modules.Workflow.Features.Workflows.GetWorkflows;
 using ZenFlow.Shared.Application.Models;
 
 namespace Modules.Workflow.DDD.Interfaces

@@ -52,6 +52,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.GetNodes
             var nodeDtos = nodes.Select(n => new WorkflowNodeDto(
                 n.Id,
                 n.NodeType,
+                n.NodeKind,
                 n.Label,
                 n.X,
                 n.Y,

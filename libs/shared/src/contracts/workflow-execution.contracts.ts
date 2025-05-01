@@ -69,3 +69,24 @@ export interface CancelWorkflowExecutionResponse {
   execution: WorkflowExecution;
   cancelled: boolean;
 }
+
+/**
+ * Request to validate a workflow before execution
+ */
+export interface ValidateWorkflowRequest {
+  workflowId: string;
+}
+
+/**
+ * Response containing validation results
+ */
+export interface ValidateWorkflowResponse {
+  isValid: boolean;
+  validationErrors: Array<{
+    nodeId?: string;
+    edgeId?: string;
+    errorCode: string;
+    errorMessage: string;
+    severity: 'error' | 'warning';
+  }>;
+}

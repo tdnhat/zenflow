@@ -12,17 +12,13 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .put("/workflows/05f6dc37-2e12-4ed4-917d-b91dfc7402ed", {
-                    id: "05f6dc37-2e12-4ed4-917d-b91dfc7402ed",
-                    name: "Test Updated Workflow 1",
-                    description: "This is a test workflow",
-                })
+                .post("/workflows/05f6dc37-2e12-4ed4-917d-b91dfc7402ed/restore", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to update workflow data");
+                    setError("Failed to restore workflow data");
                 });
         }
     }, [isLoading, isAuthenticated]);

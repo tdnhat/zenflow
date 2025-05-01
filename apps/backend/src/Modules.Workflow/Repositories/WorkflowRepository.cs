@@ -33,5 +33,11 @@ namespace Modules.Workflow.Repositories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(w => w.Id == id, cancellationToken);
         }
+        
+        public async Task UpdateAsync(DDD.Entities.Workflow workflow, CancellationToken cancellationToken = default)
+        {
+            _context.Workflows.Update(workflow);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
     }
 }

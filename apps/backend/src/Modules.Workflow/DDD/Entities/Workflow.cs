@@ -37,6 +37,9 @@ namespace Modules.Workflow.DDD.Entities
         {
             Name = name;
             Description = description;
+
+            // Raise domain event
+            AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
         }
 
         public void Archive()

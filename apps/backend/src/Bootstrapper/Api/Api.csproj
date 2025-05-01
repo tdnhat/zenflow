@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Modules.User\Modules.User.csproj" />
+    <ProjectReference Include="..\..\Modules.Workflow\Modules.Workflow.csproj" />
   </ItemGroup>
 
 </Project>

@@ -13,7 +13,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapDelete("/{id:guid}", async (
+            app.MapDelete("/api/users/{id:guid}", async (
                 Guid id,
                 ISender sender,
                 CancellationToken cancellationToken,
@@ -41,7 +41,7 @@ namespace Modules.User.Endpoints
             })
             .RequireAuthorization("AdminPolicy")
             .WithTags("Users")
-            .WithName("DeleteUserById")
+            .WithName("Users_DeleteUserById")
             .Produces(StatusCodes.Status204NoContent)
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status500InternalServerError);

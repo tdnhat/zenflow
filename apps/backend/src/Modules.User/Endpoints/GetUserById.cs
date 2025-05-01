@@ -13,7 +13,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/{id:guid}", async (
+            app.MapGet("/api/users/{id:guid}", async (
                 [FromRoute] Guid id,
                 [FromServices] ISender sender) =>
             {
@@ -26,7 +26,7 @@ namespace Modules.User.Endpoints
             })
             .RequireAuthorization("AdminPolicy")
             .WithTags("Users")
-            .WithName("GetUserById")
+            .WithName("Users_GetUserById")
             .Produces<UserDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
         }

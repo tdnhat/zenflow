@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Modules.User.Data.Interceptors;
 using ZenFlow.Shared.Application.Auth;
 using ZenFlow.Shared.Infrastructure.Auth;
 
@@ -66,6 +67,7 @@ public static class AppBuilderExtensions
             });
         });
 
+
         // Add authentication
         builder.Services.AddAuthentication()
             .AddJwtBearer(options =>
@@ -106,6 +108,8 @@ public static class AppBuilderExtensions
                 });
             });
         });
+
+        builder.Services.AddScoped<AuditInterceptor>();
 
         return builder;
     }

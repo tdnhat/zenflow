@@ -12,7 +12,7 @@ namespace Modules.User.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPut("/{id:guid}", async (
+            app.MapPut("/api/users/{id:guid}", async (
                 Guid id,
                 UpdateUserRequest request,
                 ISender sender,
@@ -30,7 +30,7 @@ namespace Modules.User.Endpoints
             })
             .RequireAuthorization("AdminPolicy")
             .WithTags("Users")
-            .WithName("UpdateUserById")
+            .WithName("Users_UpdateUserById")
             .Produces<UserDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
         }

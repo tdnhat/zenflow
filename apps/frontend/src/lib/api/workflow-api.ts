@@ -7,6 +7,8 @@ import {
     CreateEdgeRequest,
 } from "@shared/contracts/workflow.contracts";
 
+import { ValidateWorkflowResponse } from "@shared/contracts/workflow-execution.contracts";
+
 /**
  * API client for workflow-related operations
  */

@@ -18,5 +18,13 @@ namespace Modules.Workflow.Repositories
             await _context.Workflows.AddAsync(workflow, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task<IEnumerable<DDD.Entities.Workflow>> GetByUserIdAsync(string userId, CancellationToken cancellationToken = default)
+        {
+            return await _context.Workflows
+                .AsNoTracking()
+                .Where(w => w.CreatedBy == userId)
+                .ToListAsync(cancellationToken);
+        }
     }
 }

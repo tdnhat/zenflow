@@ -9,6 +9,14 @@ const nextConfig: NextConfig = {
         );
         return config;
     },
+    turbopack: {
+        resolveAlias: {
+            "@shared": path.resolve(
+                __dirname,
+                "../../libs/shared/src"
+            ),
+        },
+    }
 };
 
 export default nextConfig;

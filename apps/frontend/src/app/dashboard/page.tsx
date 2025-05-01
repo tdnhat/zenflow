@@ -12,7 +12,10 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .get("/users/me", {})
+                .get("/workflows", {
+                    // name: "Test Workflow 1",
+                    // description: "This is a test workflow",
+                })
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })

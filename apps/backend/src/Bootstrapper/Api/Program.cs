@@ -24,6 +24,8 @@ builder.Services
 
 var app = builder.Build();
 
+app.MapCarter();
+
 // Use core middleware
 app.UseCoreMiddleware();
 
@@ -32,12 +34,6 @@ app
     .UseUserModule()
     .UseWorkflowModule();
 
-// Map endpoints
-// app
-//     .MapUserEndpoints()
-//     .MapWorkflowEndpoints();
-
-app.MapCarter();
 
 // Run the application
 app.Run();

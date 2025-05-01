@@ -1,5 +1,7 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using FluentValidation;
+using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using ZenFlow.Shared.Behaviors;
 
 namespace ZenFlow.Shared.Extensions
 {
@@ -8,10 +10,15 @@ namespace ZenFlow.Shared.Extensions
         public static IServiceCollection AddMediatRWithAssemblies(
             this IServiceCollection services, params Assembly[] assemblies)
         {
-            foreach (var assembly in assemblies)
+            services.AddMediatR(config =>
             {
-                services.AddMediatR(cfg => cfg.RegisterServicesFromAssembly(assembly));
-            }
+                config.RegisterServicesFromAssemblies(assemblies);
+                config.AddOpenBehavior(typeof(ValidationBehavior<,>));
+                config.AddOpenBehavior(typeof(LoggingBehavior<,>));
+            });
+
+            // Register all validators from the assemblies
+            services.AddValidatorsFromAssemblies(assemblies);
 
             return services;
         }

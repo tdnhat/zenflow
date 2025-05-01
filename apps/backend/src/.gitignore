@@ -69,3 +69,5 @@ docker-compose.override.yml
 # Modules.User specific exclusions
 Modules.User/bin/
 Modules.User/obj/
+
+**/obj/

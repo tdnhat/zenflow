@@ -37,11 +37,30 @@ namespace Modules.Workflow.DDD.Entities
         {
             Name = name;
             Description = description;
+
+            // Raise domain event
+            AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
         }
 
         public void Archive()
         {
             Status = WorkflowStatus.Archived;
+
+            // Raise domain event for archiving workflow
+            AddDomainEvent(new WorkflowArchivedEvent(Id));
+        }
+
+        public void Restore()
+        {
+            if (Status != WorkflowStatus.Archived)
+            {
+                return; // Only archived workflows can be restored
+            }
+
+            Status = WorkflowStatus.Active;
+
+            // Raise domain event for restoring workflow
+            AddDomainEvent(new WorkflowRestoredEvent(Id));
         }
     }
 }

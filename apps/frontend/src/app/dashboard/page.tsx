@@ -12,13 +12,13 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .get("/users/me", {})
+                .get("/workflows?page=1&pageSize=20&status=Active&searchTerm=&includeArchived=false", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to fetch user data");
+                    setError("Failed to restore workflow data");
                 });
         }
     }, [isLoading, isAuthenticated]);

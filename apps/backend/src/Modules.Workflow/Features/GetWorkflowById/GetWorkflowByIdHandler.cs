@@ -2,11 +2,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Dtos;
+using System.Linq;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.GetWorkflowById
 {
-    public class GetWorkflowByIdHandler : IRequestHandler<GetWorkflowByIdQuery, WorkflowDto?>
+    public class GetWorkflowByIdHandler : IRequestHandler<GetWorkflowByIdQuery, WorkflowDetailDto?>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -22,9 +23,9 @@ namespace Modules.Workflow.Features.GetWorkflowById
             _logger = logger;
         }
 
-        public async Task<WorkflowDto?> Handle(GetWorkflowByIdQuery request, CancellationToken cancellationToken)
+        public async Task<WorkflowDetailDto?> Handle(GetWorkflowByIdQuery request, CancellationToken cancellationToken)
         {
-            var workflow = await _workflowRepository.GetByIdAsync(request.Id, cancellationToken);
+            var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.Id, cancellationToken);
 
             if (workflow == null)
             {
@@ -37,12 +38,29 @@ namespace Modules.Workflow.Features.GetWorkflowById
             {
                 _logger.LogWarning("User {UserId} attempted to access workflow {WorkflowId} which belongs to another user", 
                     _currentUser.UserId, request.Id);
-                return null; // Return null instead of throwing an exception to avoid revealing that the workflow exists
+                return null;
             }
 
             _logger.LogInformation("Retrieved workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
             
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status);
+            return new WorkflowDetailDto(
+                workflow.Id, 
+                workflow.Name, 
+                workflow.Description, 
+                workflow.Status,
+                workflow.Nodes.Select(n => new WorkflowNodeDto(
+                    n.Id, 
+                    n.NodeType, 
+                    n.Label, 
+                    n.X, 
+                    n.Y, 
+                    n.ConfigJson)),
+                workflow.Edges.Select(e => new WorkflowEdgeDto(
+                    e.Id, 
+                    e.SourceNodeId, 
+                    e.TargetNodeId, 
+                    e.Label, 
+                    e.ConditionJson)));
         }
     }
 }

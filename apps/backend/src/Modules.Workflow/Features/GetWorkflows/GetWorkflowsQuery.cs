@@ -1,7 +1,8 @@
 using MediatR;
 using Modules.Workflow.Dtos;
+using ZenFlow.Shared.Application.Models;
 
 namespace Modules.Workflow.Features.GetWorkflows
 {
-    public record GetWorkflowsQuery() : IRequest<IEnumerable<WorkflowDto>>;
+    public record GetWorkflowsQuery(WorkflowsFilterRequest Filter) : IRequest<PaginatedResult<WorkflowDto>>;
 }

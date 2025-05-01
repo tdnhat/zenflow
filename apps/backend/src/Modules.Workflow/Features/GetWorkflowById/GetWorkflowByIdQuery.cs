@@ -3,5 +3,5 @@ using Modules.Workflow.Dtos;
 
 namespace Modules.Workflow.Features.GetWorkflowById
 {
-    public record GetWorkflowByIdQuery(Guid Id) : IRequest<WorkflowDto?>;
+    public record GetWorkflowByIdQuery(Guid Id) : IRequest<WorkflowDetailDto?>;
 }

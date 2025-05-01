@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Modules.Workflow.Dtos;
 using Modules.Workflow.Features.GetWorkflows;
+using ZenFlow.Shared.Application.Models;
 
 namespace Modules.Workflow.Endpoints
 {
@@ -12,15 +13,17 @@ namespace Modules.Workflow.Endpoints
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapGet("/api/workflows/", async (ISender sender) =>
+            app.MapGet("/api/workflows/", async (
+                [AsParameters] WorkflowsFilterRequest filter,
+                ISender sender) =>
             {
-                var result = await sender.Send(new GetWorkflowsQuery());
+                var result = await sender.Send(new GetWorkflowsQuery(filter));
                 return Results.Ok(result);
             })
             .RequireAuthorization()
             .WithTags("Workflows")
             .WithName("Workflows_GetWorkflows")
-            .Produces<IEnumerable<WorkflowDto>>(StatusCodes.Status200OK);
+            .Produces<PaginatedResult<WorkflowDto>>(StatusCodes.Status200OK);
         }
     }
 }

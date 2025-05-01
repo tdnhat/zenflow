@@ -12,7 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .post("/workflows/05f6dc37-2e12-4ed4-917d-b91dfc7402ed/restore", {})
+                .get("/workflows?page=1&pageSize=20&status=Active&searchTerm=&includeArchived=false", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })

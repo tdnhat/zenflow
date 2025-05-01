@@ -8,7 +8,7 @@ namespace Modules.Workflow.DDD.Entities
     {
         public string Name { get; private set; } = default!;
         public string Description { get; private set; } = string.Empty;
-        public string Status { get; private set; } = WorkflowStatus.Draft;
+        public string Status { get; private set; } = WorkflowStatus.DRAFT;
 
         public List<WorkflowNode> Nodes { get; private set; } = new();
         public List<WorkflowEdge> Edges { get; private set; } = new();
@@ -24,7 +24,7 @@ namespace Modules.Workflow.DDD.Entities
                 Id = Guid.NewGuid(),
                 Name = name,
                 Description = description,
-                Status = WorkflowStatus.Draft
+                Status = WorkflowStatus.DRAFT
             };
 
             // Raise domain event
@@ -44,7 +44,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public void Archive()
         {
-            Status = WorkflowStatus.Archived;
+            Status = WorkflowStatus.ARCHIVED;
 
             // Raise domain event for archiving workflow
             AddDomainEvent(new WorkflowArchivedEvent(Id));
@@ -52,12 +52,12 @@ namespace Modules.Workflow.DDD.Entities
 
         public void Restore()
         {
-            if (Status != WorkflowStatus.Archived)
+            if (Status != WorkflowStatus.ARCHIVED)
             {
                 return; // Only archived workflows can be restored
             }
 
-            Status = WorkflowStatus.Active;
+            Status = WorkflowStatus.DRAFT;
 
             // Raise domain event for restoring workflow
             AddDomainEvent(new WorkflowRestoredEvent(Id));

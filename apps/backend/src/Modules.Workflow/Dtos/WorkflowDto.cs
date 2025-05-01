@@ -12,7 +12,8 @@
         
     public record WorkflowNodeDto(
         Guid Id, 
-        string NodeType, 
+        string NodeType,
+        string NodeKind, 
         string Label, 
         float X, 
         float Y, 
@@ -22,6 +23,9 @@
         Guid Id, 
         Guid SourceNodeId, 
         Guid TargetNodeId, 
-        string Label, 
-        string ConditionJson);
+        string Label,
+        string EdgeType,
+        string ConditionJson,
+        string SourceHandle,
+        string TargetHandle);
 }

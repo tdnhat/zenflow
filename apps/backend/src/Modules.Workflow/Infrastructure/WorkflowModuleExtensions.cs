@@ -9,6 +9,8 @@ using Modules.User.Data.Interceptors;
 using Modules.Workflow.Data;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Repositories;
+using Modules.Workflow.Services.NodeManagement;
+using Modules.Workflow.Services.Validation;
 
 namespace Modules.Workflow.Infrastructure
 {
@@ -26,22 +28,15 @@ namespace Modules.Workflow.Infrastructure
 
             // Register the repository and other services
             services.AddScoped<IWorkflowRepository, WorkflowRepository>();
+            services.AddScoped<IWorkflowNodeRepository, WorkflowNodeRepository>();
+            services.AddScoped<IWorkflowEdgeRepository, WorkflowEdgeRepository>();
+            services.AddScoped<IWorkflowExecutionRepository, WorkflowExecutionRepository>();
+            services.AddScoped<INodeExecutionRepository, NodeExecutionRepository>();
+            services.AddScoped<INodeConfigValidator, NodeConfigValidator>();
+            services.AddScoped<INodeTypeRegistry, NodeTypeRegistry>();
 
             return services;
         }
-
-        public static IEndpointRouteBuilder MapWorkflowEndpoints(this IEndpointRouteBuilder endpoints)
-        {
-            var group = endpoints
-                .MapGroup("/api/v1/workflows")
-                .WithTags("Workflows");
-
-            // Use Carter with this specific group
-            group.MapCarter();
-
-            return endpoints;
-        }
-
 
         public static WebApplication UseWorkflowModule(this WebApplication app)
         {

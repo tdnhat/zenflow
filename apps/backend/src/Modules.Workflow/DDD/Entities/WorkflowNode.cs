@@ -1,4 +1,5 @@
-﻿using ZenFlow.Shared.Domain;
+﻿using Modules.Workflow.DDD.Events;
+using ZenFlow.Shared.Domain;
 
 namespace Modules.Workflow.DDD.Entities
 {
@@ -6,6 +7,7 @@ namespace Modules.Workflow.DDD.Entities
     {
         public Guid WorkflowId { get; set; }
         public string NodeType { get; set; } = default!;
+        public string NodeKind { get; set; } = "ACTION"; // Default to ACTION for backward compatibility
         public string Label { get; set; } = string.Empty;
         public float X { get; set; }
         public float Y { get; set; }
@@ -14,18 +16,47 @@ namespace Modules.Workflow.DDD.Entities
         // Parameterless constructor for EF Core
         public WorkflowNode() { }
 
-        public static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
+        public static WorkflowNode Create(Guid workflowId, string nodeType, string nodeKind, float x, float y, string label, string configJson)
         {
-            return new WorkflowNode
+            var node = new WorkflowNode
             {
                 Id = Guid.NewGuid(),
                 WorkflowId = workflowId,
                 NodeType = nodeType,
+                NodeKind = nodeKind,
                 Label = label,
                 X = x,
                 Y = y,
                 ConfigJson = configJson
             };
+
+            // Raise domain event
+            node.AddDomainEvent(new WorkflowNodeCreatedEvent(node.Id, node.WorkflowId, node.NodeType));
+
+            return node;
+        }
+
+        // For backward compatibility
+        public static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
+        {
+            return Create(workflowId, nodeType, "ACTION", x, y, label, configJson);
+        }
+
+        public void Update(float x, float y, string label, string configJson)
+        {
+            X = x;
+            Y = y;
+            Label = label;
+            ConfigJson = configJson;
+
+            // Raise domain event
+            AddDomainEvent(new WorkflowNodeUpdatedEvent(Id, WorkflowId, NodeType));
+        }
+
+        public void MarkAsDeleted()
+        {
+            // Raise domain event for deletion
+            AddDomainEvent(new WorkflowNodeDeletedEvent(Id, WorkflowId));
         }
     }
 }

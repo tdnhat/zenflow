@@ -1,4 +1,5 @@
-﻿using ZenFlow.Shared.Domain;
+﻿using Modules.Workflow.DDD.Events;
+using ZenFlow.Shared.Domain;
 
 namespace Modules.Workflow.DDD.Entities
 {
@@ -16,7 +17,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
         {
-            return new WorkflowNode
+            var node = new WorkflowNode
             {
                 Id = Guid.NewGuid(),
                 WorkflowId = workflowId,
@@ -26,6 +27,28 @@ namespace Modules.Workflow.DDD.Entities
                 Y = y,
                 ConfigJson = configJson
             };
+
+            // Raise domain event
+            node.AddDomainEvent(new WorkflowNodeCreatedEvent(node.Id, node.WorkflowId, node.NodeType));
+
+            return node;
+        }
+
+        public void Update(float x, float y, string label, string configJson)
+        {
+            X = x;
+            Y = y;
+            Label = label;
+            ConfigJson = configJson;
+
+            // Raise domain event
+            AddDomainEvent(new WorkflowNodeUpdatedEvent(Id, WorkflowId, NodeType));
+        }
+
+        public void MarkAsDeleted()
+        {
+            // Raise domain event for deletion
+            AddDomainEvent(new WorkflowNodeDeletedEvent(Id, WorkflowId));
         }
     }
 }

@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Modules.User.Data.Configurations
 {
-    internal class UserConfiguration : IEntityTypeConfiguration<DDD.Entities.User>
+    public class UserConfiguration : IEntityTypeConfiguration<DDD.Entities.User>
     {
         public void Configure(EntityTypeBuilder<DDD.Entities.User> builder)
         {

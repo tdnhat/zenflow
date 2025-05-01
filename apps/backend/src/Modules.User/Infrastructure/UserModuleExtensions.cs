@@ -41,7 +41,7 @@ namespace Modules.User.Infrastructure
                     .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
             });
 
-            services.AddScoped<AuditInterceptor>();
+            //services.AddScoped<AuditInterceptor>();
             services.AddScoped<IUserRepository, UserRepository>();
 
             // Register Keycloak services with proper dependency injection

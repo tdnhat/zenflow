@@ -18,8 +18,11 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modules.User", "Modules.User\Modules.User.csproj", "{CAC889C6-9899-4598-BC6A-1FC4860C8876}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Workflow", "Workflow", "{5DAB7777-1748-4A12-ADF3-41DFAF2B1BA5}"
+	ProjectSection(SolutionItems) = preProject
+		Modules.Workflow\Repositories\IWorkflowRepository.cs = Modules.Workflow\Repositories\IWorkflowRepository.cs
+	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Modules.Workflow", "Modules.Workflow\Modules.Workflow.csproj", "{C84FC16B-27B8-4E76-8FA9-36EB3F87FA58}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Modules.Workflow", "Modules.Workflow\Modules.Workflow.csproj", "{C84FC16B-27B8-4E76-8FA9-36EB3F87FA58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

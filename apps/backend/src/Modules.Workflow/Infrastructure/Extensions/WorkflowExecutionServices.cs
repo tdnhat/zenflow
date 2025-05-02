@@ -15,6 +15,19 @@ namespace Modules.Workflow.Infrastructure.Extensions
             services.AddSingleton<IBrowserAutomation, BrowserAutomation>();
             services.AddSingleton<IBrowserSessionManager, BrowserSessionManager>();
             services.AddScoped<IWorkflowLifecycleHandler, WorkflowCleanupHandler>();
+            
+            // Configure SampleBrowserWorkflow options
+            services.Configure<SampleBrowserWorkflowOptions>(options => {
+                // These are the default values, can be overridden by configuration
+                options.SearchEngineUrl = "https://www.google.com";
+                options.SearchTerm = "Elsa Workflows";
+                options.SearchInputSelector = "textarea[name='q']";
+                options.SearchButtonSelector = "input[name='btnK']";
+                options.SearchResultsSelector = "div[role='gridcell']";
+                options.ExtractDataSelector = "div[role='gridcell']";
+                options.EnableScreenshots = false;
+                options.TypeDelay = 50;
+            });
 
             // Add Elsa services
             services.AddElsa(elsa =>

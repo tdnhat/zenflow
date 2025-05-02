@@ -14,16 +14,15 @@ namespace Modules.Workflow.Endpoints.Workflows
         public void AddRoutes(IEndpointRouteBuilder app)
         {
             app.MapGet("/api/workflows/", async (
-                [AsParameters] WorkflowsFilterRequest filter,
                 ISender sender) =>
             {
-                var result = await sender.Send(new GetWorkflowsQuery(filter));
+                var result = await sender.Send(new GetWorkflowsQuery());
                 return Results.Ok(result);
             })
             .RequireAuthorization()
             .WithTags("Workflows")
             .WithName("Workflows_GetWorkflows")
-            .Produces<PaginatedResult<WorkflowDto>>(StatusCodes.Status200OK);
+            .Produces<List<WorkflowDto>>(StatusCodes.Status200OK);
         }
     }
 }

@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflows
 {
-    public class GetWorkflowsHandler : IRequestHandler<GetWorkflowsQuery, PaginatedResult<WorkflowDto>>
+    public class GetWorkflowsHandler : IRequestHandler<GetWorkflowsQuery, List<WorkflowDto>>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -24,30 +24,24 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
             _logger = logger;
         }
 
-        public async Task<PaginatedResult<WorkflowDto>> Handle(GetWorkflowsQuery request, CancellationToken cancellationToken)
+        public async Task<List<WorkflowDto>> Handle(GetWorkflowsQuery request, CancellationToken cancellationToken)
         {
             // Get the current user's ID
             var userId = _currentUser.UserId;
 
-            _logger.LogInformation("Retrieving filtered workflows for user {UserId} with page {Page} and pageSize {PageSize}",
-                userId, request.Filter.Page, request.Filter.PageSize);
+            _logger.LogInformation("Retrieving workflows for user {UserId}", userId);
 
-            // Get filtered and paginated workflows
-            var paginatedWorkflows = await _workflowRepository.GetFilteredAsync(userId, request.Filter, cancellationToken);
+            // Get all workflows
+            var workflows = await _workflowRepository.GetAllAsync(cancellationToken: cancellationToken);
 
             // Map entity results to DTOs
-            var workflowDtos = paginatedWorkflows.Items.Select(w =>
+            var workflowDtos = workflows.Select(w =>
                 new WorkflowDto(w.Id, w.Name, w.Description, w.Status)).ToList();
 
             _logger.LogInformation("Retrieved {Count} workflows for user {UserId} (Total: {Total})",
-                workflowDtos.Count, userId, paginatedWorkflows.TotalCount);
+                workflowDtos.Count, userId, workflows.Count);
 
-            // Create a new paginated result with the mapped DTOs
-            return new PaginatedResult<WorkflowDto>(
-                workflowDtos,
-                paginatedWorkflows.TotalCount,
-                paginatedWorkflows.Page,
-                paginatedWorkflows.PageSize);
+            return workflowDtos;
         }
     }
 }

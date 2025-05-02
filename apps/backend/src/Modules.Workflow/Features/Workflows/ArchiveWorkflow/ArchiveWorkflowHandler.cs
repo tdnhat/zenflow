@@ -44,6 +44,7 @@ namespace Modules.Workflow.Features.Workflows.ArchiveWorkflow
             workflow.Archive();
 
             await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Archived workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 

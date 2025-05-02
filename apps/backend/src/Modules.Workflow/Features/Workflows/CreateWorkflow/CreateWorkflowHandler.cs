@@ -29,6 +29,7 @@ namespace Modules.Workflow.Features.Workflows.CreateWorkflow
             );
 
             await _workflowRepository.AddAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Workflow {Id} created by user {UserId}", workflow.Id, _currentUser.UserId);
 

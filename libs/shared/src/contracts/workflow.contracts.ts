@@ -11,9 +11,12 @@ export interface CreateWorkflowRequest {
   nodes: Array<{
     id: string;
     type: string;
+    nodeKind: NodeKind;
     label: string;
     position: { x: number; y: number };
     data: Record<string, any>;
+    sourcePosition?: string;
+    targetPosition?: string;
   }>;
   edges: Array<{
     id: string;
@@ -22,6 +25,9 @@ export interface CreateWorkflowRequest {
     sourceHandle?: string;
     targetHandle?: string;
     label?: string;
+    type?: string;
+    animated?: boolean;
+    data?: Record<string, any>;
   }>;
   tags?: string[];
 }
@@ -44,9 +50,12 @@ export interface UpdateWorkflowRequest {
   nodes?: Array<{
     id: string;
     type: string;
+    nodeKind?: NodeKind;
     label: string;
     position: { x: number; y: number };
     data: Record<string, any>;
+    sourcePosition?: string;
+    targetPosition?: string;
   }>;
   edges?: Array<{
     id: string;
@@ -55,6 +64,9 @@ export interface UpdateWorkflowRequest {
     sourceHandle?: string;
     targetHandle?: string;
     label?: string;
+    type?: string;
+    animated?: boolean;
+    data?: Record<string, any>;
   }>;
   tags?: string[];
 }
@@ -99,6 +111,8 @@ export interface CreateNodeRequest {
   y: number;
   label: string;
   configJson: string;
+  sourcePosition?: string;
+  targetPosition?: string;
 }
 
 /**
@@ -112,6 +126,8 @@ export interface CreateEdgeRequest {
   conditionJson: string;
   sourceHandle: string;
   targetHandle: string;
+  animated?: boolean;
+  data?: Record<string, any>;
 }
 
 /**
@@ -125,6 +141,8 @@ export interface WorkflowNodeDto {
   x: number;
   y: number;
   configJson: string;
+  sourcePosition?: string;
+  targetPosition?: string;
 }
 
 /**
@@ -139,6 +157,8 @@ export interface WorkflowEdgeDto {
   conditionJson: string;
   sourceHandle: string;
   targetHandle: string;
+  animated?: boolean;
+  data?: Record<string, any>;
 }
 
 /**
@@ -157,4 +177,49 @@ export interface WorkflowDto {
 export interface WorkflowDetailDto extends WorkflowDto {
   nodes: WorkflowNodeDto[];
   edges: WorkflowEdgeDto[];
+}
+
+/**
+ * Browser automation workflow specific configuration
+ */
+export interface BrowserWorkflowConfigDto {
+  searchEngineUrl: string;
+  searchTerm: string;
+  searchInputSelector: string;
+  searchButtonSelector: string;
+  searchResultsSelector: string;
+  typeDelay: number;
+  takeScreenshots: boolean;
+}
+
+/**
+ * Request to run a browser automation workflow
+ */
+export interface RunBrowserWorkflowRequest {
+  workflowId: string;
+  searchTerm?: string;
+  takeScreenshots?: boolean;
+}
+
+/**
+ * Response for a browser automation workflow run
+ */
+export interface RunBrowserWorkflowResponse {
+  executionId: string;
+  status: string;
+}
+
+/**
+ * Request to stop a browser automation workflow
+ */
+export interface StopBrowserWorkflowRequest {
+  executionId: string;
+}
+
+/**
+ * Response after stopping a browser workflow
+ */
+export interface StopBrowserWorkflowResponse {
+  success: boolean;
+  message: string;
 }

@@ -25,5 +25,10 @@ export enum NodeKind {
   /**
    * Connector nodes provide integration with external systems (e.g., Database)
    */
-  CONNECTOR = 'CONNECTOR'
+  CONNECTOR = 'CONNECTOR',
+  
+  /**
+   * Browser automation nodes for web interactions (e.g., Navigate, Click, InputText)
+   */
+  BROWSER_AUTOMATION = 'BROWSER_AUTOMATION'
 }

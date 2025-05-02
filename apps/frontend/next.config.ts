@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
         };
         return config;
     },
+    turbopack: {
+        resolveAlias: {
+            "@shared": path.resolve(__dirname, "../../libs/shared/src")
+        }
+    },
     experimental: {
         externalDir: true  // Allow importing from outside the app directory
     }

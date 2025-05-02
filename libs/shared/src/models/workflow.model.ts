@@ -1,4 +1,5 @@
 import { WorkflowStatus } from '../enums/workflow-status.enum';
+import { NodeKind } from '../enums/node-kind.enum';
 
 /**
  * Represents a workflow in the ZenFlow system
@@ -24,6 +25,7 @@ export interface Workflow {
 export interface WorkflowNode {
   id: string;
   type: string;
+  nodeKind: NodeKind;
   label: string;
   position: {
     x: number;
@@ -31,6 +33,11 @@ export interface WorkflowNode {
   };
   data: Record<string, any>;
   style?: Record<string, any>;
+  // For compatibility with React Flow
+  sourcePosition?: string;
+  targetPosition?: string;
+  selected?: boolean;
+  dragging?: boolean;
 }
 
 /**
@@ -46,4 +53,7 @@ export interface WorkflowEdge {
   type?: string;
   data?: Record<string, any>;
   style?: Record<string, any>;
+  // For compatibility with React Flow
+  animated?: boolean;
+  selected?: boolean;
 }

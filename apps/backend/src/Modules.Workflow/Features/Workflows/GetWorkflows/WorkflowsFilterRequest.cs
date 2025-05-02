@@ -2,7 +2,7 @@ using ZenFlow.Shared.Application.Models;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflows
 {
-    public class WorkflowsFilterRequest : PaginatedRequest
+    public class WorkflowsFilterRequest
     {
         public string? Status { get; set; }
         public string? SearchTerm { get; set; }

@@ -90,3 +90,48 @@ export interface ValidateWorkflowResponse {
     severity: 'error' | 'warning';
   }>;
 }
+
+/**
+ * Browser workflow execution progress update
+ */
+export interface BrowserExecutionProgress {
+  executionId: string;
+  status: ExecutionStatus;
+  currentNodeId?: string;
+  currentNodeName?: string;
+  currentActivityName?: string;
+  progress?: number; // 0-100 percentage
+  screenshot?: string; // Base64 encoded screenshot
+  extractedData?: any; // Data extracted from the page
+  lastLogMessage?: string;
+  error?: string;
+}
+
+/**
+ * Browser workflow execution result
+ */
+export interface BrowserExecutionResult {
+  executionId: string;
+  status: ExecutionStatus;
+  startedAt: Date;
+  completedAt?: Date;
+  duration?: number; // ms
+  screenshots: Array<{
+    nodeId: string;
+    activityName: string;
+    timestamp: Date;
+    image: string; // Base64 encoded
+  }>;
+  extractedData: Array<{
+    nodeId: string;
+    activityName: string;
+    timestamp: Date;
+    data: any;
+  }>;
+  error?: {
+    message: string;
+    stack?: string;
+    nodeId?: string;
+    screenshot?: string; // Base64 encoded screenshot at error time
+  };
+}

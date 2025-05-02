@@ -44,6 +44,7 @@ namespace Modules.Workflow.Features.Workflows.RestoreWorkflow
             workflow.Restore();
 
             await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Restored workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 

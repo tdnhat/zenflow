@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Modules.User.DDD.Entities;
 using System.Linq.Expressions;
 using ZenFlow.Shared.Domain;
 
 namespace Modules.User.Data
 {
+    
+
     public class UserDbContext : DbContext
     {
         public UserDbContext(DbContextOptions<UserDbContext> options) : base(options)
@@ -11,6 +14,7 @@ namespace Modules.User.Data
         }
 
         public DbSet<DDD.Entities.User> Users => Set<DDD.Entities.User>();
+        public DbSet<UserOutboxMessage> OutboxMessages => Set<UserOutboxMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

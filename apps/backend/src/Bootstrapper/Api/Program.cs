@@ -1,7 +1,5 @@
 using Carter;
-using Modules.User.Endpoints;
 using Modules.User.Infrastructure;
-using Modules.Workflow.Data;
 using Modules.Workflow.Infrastructure;
 using ZenFlow.Shared.Extensions;
 using ZenFlow.Shared.Infrastructure;
@@ -16,6 +14,9 @@ var workflowAssembly = typeof(WorkflowModuleExtensions).Assembly;
 builder.Services
     .AddCarterWithAssemblies(userAssembly, workflowAssembly)
     .AddMediatRWithAssemblies(userAssembly, workflowAssembly);
+
+// Add MassTransit with RabbitMQ for message transport
+builder.Services.AddMassTransitWithRabbitMq(builder.Configuration);
 
 // Register module services
 builder.Services

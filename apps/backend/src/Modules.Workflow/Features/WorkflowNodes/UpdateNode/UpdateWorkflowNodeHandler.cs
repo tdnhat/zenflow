@@ -8,18 +8,15 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
 {
     public class UpdateWorkflowNodeHandler : IRequestHandler<UpdateWorkflowNodeCommand, WorkflowNodeDto?>
     {
-        private readonly IWorkflowNodeRepository _nodeRepository;
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<UpdateWorkflowNodeHandler> _logger;
 
         public UpdateWorkflowNodeHandler(
-            IWorkflowNodeRepository nodeRepository,
             IWorkflowRepository workflowRepository,
             ICurrentUserService currentUser,
             ILogger<UpdateWorkflowNodeHandler> logger)
         {
-            _nodeRepository = nodeRepository;
             _workflowRepository = workflowRepository;
             _currentUser = currentUser;
             _logger = logger;
@@ -28,7 +25,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
         public async Task<WorkflowNodeDto?> Handle(UpdateWorkflowNodeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
-            var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
+            var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
             
             if (workflow == null)
             {
@@ -44,8 +41,8 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
                 return null;
             }
 
-            // Get the node to update
-            var node = await _nodeRepository.GetByIdAsync(request.NodeId, cancellationToken);
+            // Find the node in the workflow
+            var node = workflow.Nodes.FirstOrDefault(n => n.Id == request.NodeId);
             
             if (node == null)
             {
@@ -54,17 +51,12 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
                 return null;
             }
 
-            // Verify node belongs to the specified workflow
-            if (node.WorkflowId != request.WorkflowId)
-            {
-                _logger.LogWarning("Node with ID {NodeId} does not belong to workflow {WorkflowId}", 
-                    request.NodeId, request.WorkflowId);
-                return null;
-            }
-
-            // Update the node
-            node.Update(request.X, request.Y, request.Label, request.ConfigJson);
-            await _nodeRepository.UpdateAsync(node, cancellationToken);
+            // Update the node through the aggregate root
+            workflow.UpdateNode(request.NodeId, request.X, request.Y, request.Label, request.ConfigJson);
+            
+            // Save changes to the workflow aggregate
+            await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Node {NodeId} updated in workflow {WorkflowId} by user {UserId}", 
                 node.Id, node.WorkflowId, _currentUser.UserId);

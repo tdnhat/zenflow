@@ -9,7 +9,7 @@ namespace Modules.Workflow.DDD.Entities
     {
         public Guid WorkflowExecutionId { get; private set; }
         public Guid NodeId { get; private set; }
-        public string Status { get; private set; } = NodeExecutionStatus.PENDING;
+        public NodeExecutionStatus Status { get; private set; } = NodeExecutionStatus.PENDING;
         public DateTime? StartedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
         public string? InputJson { get; private set; }

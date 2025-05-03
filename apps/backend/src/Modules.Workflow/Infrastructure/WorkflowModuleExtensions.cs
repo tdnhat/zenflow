@@ -25,6 +25,8 @@ namespace Modules.Workflow.Infrastructure
                     .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
             });
 
+            services.AddWorkflowOutboxServices();
+
             // Register the repository and other services
             services.AddScoped<IWorkflowRepository, WorkflowRepository>();
             services.AddScoped<IWorkflowNodeRepository, WorkflowNodeRepository>();

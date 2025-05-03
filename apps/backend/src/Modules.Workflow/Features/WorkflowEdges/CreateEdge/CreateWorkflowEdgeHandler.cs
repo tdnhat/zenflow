@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
@@ -9,22 +8,16 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
 {
     public class CreateWorkflowEdgeHandler : IRequestHandler<CreateWorkflowEdgeCommand, WorkflowEdgeDto>
     {
-        private readonly IWorkflowEdgeRepository _edgeRepository;
         private readonly IWorkflowRepository _workflowRepository;
-        private readonly IWorkflowNodeRepository _nodeRepository;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<CreateWorkflowEdgeHandler> _logger;
 
         public CreateWorkflowEdgeHandler(
-            IWorkflowEdgeRepository edgeRepository,
             IWorkflowRepository workflowRepository,
-            IWorkflowNodeRepository nodeRepository,
             ICurrentUserService currentUser,
             ILogger<CreateWorkflowEdgeHandler> logger)
         {
-            _edgeRepository = edgeRepository;
             _workflowRepository = workflowRepository;
-            _nodeRepository = nodeRepository;
             _currentUser = currentUser;
             _logger = logger;
         }
@@ -32,7 +25,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
         public async Task<WorkflowEdgeDto> Handle(CreateWorkflowEdgeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
-            var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
+            var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
             
             if (workflow == null)
             {
@@ -48,27 +41,9 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
                 throw new UnauthorizedAccessException("You do not have permission to modify this workflow");
             }
 
-            // Verify source node exists and belongs to the workflow
-            var sourceNode = await _nodeRepository.GetByIdAsync(request.SourceNodeId, cancellationToken);
-            if (sourceNode == null || sourceNode.WorkflowId != request.WorkflowId)
-            {
-                _logger.LogWarning("Source node {NodeId} not found in workflow {WorkflowId}", 
-                    request.SourceNodeId, request.WorkflowId);
-                throw new InvalidOperationException($"Source node {request.SourceNodeId} not found in workflow {request.WorkflowId}");
-            }
-
-            // Verify target node exists and belongs to the workflow
-            var targetNode = await _nodeRepository.GetByIdAsync(request.TargetNodeId, cancellationToken);
-            if (targetNode == null || targetNode.WorkflowId != request.WorkflowId)
-            {
-                _logger.LogWarning("Target node {NodeId} not found in workflow {WorkflowId}", 
-                    request.TargetNodeId, request.WorkflowId);
-                throw new InvalidOperationException($"Target node {request.TargetNodeId} not found in workflow {request.WorkflowId}");
-            }
-
-            // Create edge
-            var edge = WorkflowEdge.Create(
-                request.WorkflowId,
+            // Add the edge through the aggregate root, which will perform all necessary validations 
+            // and raise the appropriate domain event
+            var edge = workflow.AddEdge(
                 request.SourceNodeId,
                 request.TargetNodeId,
                 request.Label,
@@ -77,8 +52,10 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
                 request.SourceHandle,
                 request.TargetHandle
             );
-
-            await _edgeRepository.AddAsync(edge, cancellationToken);
+            
+            // Save changes to the workflow aggregate
+            await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Edge {EdgeId} created between nodes {SourceNodeId} and {TargetNodeId} in workflow {WorkflowId} by user {UserId}", 
                 edge.Id, edge.SourceNodeId, edge.TargetNodeId, edge.WorkflowId, _currentUser.UserId);

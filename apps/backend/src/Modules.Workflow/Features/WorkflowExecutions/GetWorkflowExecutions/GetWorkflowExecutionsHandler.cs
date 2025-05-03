@@ -36,7 +36,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
                     e.Id,
                     e.WorkflowId,
                     e.WorkflowVersion,
-                    e.Status,
+                    e.Status.ToString(),
                     e.StartedAt,
                     e.CompletedAt
                 )).ToList();

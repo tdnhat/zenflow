@@ -42,6 +42,8 @@ namespace Modules.User.Infrastructure
                     .AddInterceptors(sp.GetRequiredService<AuditInterceptor>());
             });
 
+            services.AddUserOutboxServices();
+
             //services.AddScoped<AuditInterceptor>();
             services.AddScoped<IUserRepository, UserRepository>();
 

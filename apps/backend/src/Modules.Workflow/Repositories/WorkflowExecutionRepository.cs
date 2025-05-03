@@ -1,22 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using Modules.Workflow.Data;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions;
-using ZenFlow.Shared.Application.Models;
+using Modules.Workflow.Infrastructure.Events;
+using ZenFlow.Shared.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Threading;
+using System.Threading.Tasks;
+
 namespace Modules.Workflow.Repositories
 {
     public class WorkflowExecutionRepository : IWorkflowExecutionRepository
     {
         private readonly WorkflowDbContext _dbContext;
+        private readonly IWorkflowDomainEventService _domainEventService;
 
-        public WorkflowExecutionRepository(WorkflowDbContext dbContext)
+        public WorkflowExecutionRepository(WorkflowDbContext dbContext, IWorkflowDomainEventService domainEventService)
         {
             _dbContext = dbContext;
+            _domainEventService = domainEventService;
         }
 
         public async Task<DDD.Entities.WorkflowExecution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -35,17 +38,6 @@ namespace Modules.Workflow.Repositories
                 .ToListAsync(cancellationToken);
         }
 
-        public async Task<List<DDD.Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, int skip = 0, int take = 50, CancellationToken cancellationToken = default)
-        {
-            return await _dbContext.WorkflowExecutions
-                .Where(e => e.WorkflowId == workflowId)
-                .OrderByDescending(e => e.StartedAt)
-                .Skip(skip)
-                .Take(take)
-                .ToListAsync(cancellationToken);
-        }
-
-        // New overload implementation
         public async Task<List<DDD.Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default)
         {
             return await _dbContext.WorkflowExecutions
@@ -88,14 +80,33 @@ namespace Modules.Workflow.Repositories
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            // Dispatch domain events before saving changes
+            await DispatchDomainEventsAsync();
+            
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        public async Task<DDD.Entities.WorkflowExecution?> GetByIdWithNodeExecutionsAsync(Guid id, CancellationToken cancellationToken = default)
+        private async Task DispatchDomainEventsAsync()
         {
-            return await _dbContext.WorkflowExecutions
-                .Include(e => e.NodeExecutions)
-                .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            // Get all entities with domain events
+            var entitiesWithEvents = _dbContext.ChangeTracker.Entries<Aggregate<Guid>>()
+                .Select(e => e.Entity)
+                .Where(e => e.DomainEvents.Any())
+                .ToList();
+
+            // Get all domain events
+            var domainEvents = entitiesWithEvents
+                .SelectMany(e => e.DomainEvents)
+                .ToList();
+
+            // Clear domain events from entities
+            entitiesWithEvents.ForEach(e => e.ClearDomainEvents());
+
+            // Dispatch domain events
+            foreach (var domainEvent in domainEvents)
+            {
+                await _domainEventService.PublishAsync(domainEvent);
+            }
         }
     }
 }

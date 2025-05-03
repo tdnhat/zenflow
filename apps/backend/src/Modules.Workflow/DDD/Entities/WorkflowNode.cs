@@ -3,20 +3,23 @@ using ZenFlow.Shared.Domain;
 
 namespace Modules.Workflow.DDD.Entities
 {
-    public class WorkflowNode : Aggregate<Guid>
+    public class WorkflowNode : Entity<Guid>
     {
-        public Guid WorkflowId { get; set; }
-        public string NodeType { get; set; } = default!;
-        public string NodeKind { get; set; } = "ACTION"; // Default to ACTION for backward compatibility
-        public string Label { get; set; } = string.Empty;
-        public float X { get; set; }
-        public float Y { get; set; }
-        public string ConfigJson { get; set; } = "{}";
+        public Guid WorkflowId { get; private set; }
+        public string NodeType { get; private set; } = default!;
+        public string NodeKind { get; private set; } = "ACTION"; // Default to ACTION for backward compatibility
+        public string Label { get; private set; } = string.Empty;
+        public float X { get; private set; }
+        public float Y { get; private set; }
+        public string ConfigJson { get; private set; } = "{}";
+
+        // Navigation property for the Aggregate Root
+        public Workflow? Workflow { get; private set; }
 
         // Parameterless constructor for EF Core
-        public WorkflowNode() { }
+        private WorkflowNode() { }
 
-        public static WorkflowNode Create(Guid workflowId, string nodeType, string nodeKind, float x, float y, string label, string configJson)
+        internal static WorkflowNode Create(Guid workflowId, string nodeType, string nodeKind, float x, float y, string label, string configJson)
         {
             var node = new WorkflowNode
             {
@@ -30,33 +33,21 @@ namespace Modules.Workflow.DDD.Entities
                 ConfigJson = configJson
             };
 
-            // Raise domain event
-            node.AddDomainEvent(new WorkflowNodeCreatedEvent(node.Id, node.WorkflowId, node.NodeType));
-
             return node;
         }
 
         // For backward compatibility
-        public static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
+        internal static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
         {
             return Create(workflowId, nodeType, "ACTION", x, y, label, configJson);
         }
 
-        public void Update(float x, float y, string label, string configJson)
+        internal void Update(float x, float y, string label, string configJson)
         {
             X = x;
             Y = y;
             Label = label;
             ConfigJson = configJson;
-
-            // Raise domain event
-            AddDomainEvent(new WorkflowNodeUpdatedEvent(Id, WorkflowId, NodeType));
-        }
-
-        public void MarkAsDeleted()
-        {
-            // Raise domain event for deletion
-            AddDomainEvent(new WorkflowNodeDeletedEvent(Id, WorkflowId));
         }
     }
 }

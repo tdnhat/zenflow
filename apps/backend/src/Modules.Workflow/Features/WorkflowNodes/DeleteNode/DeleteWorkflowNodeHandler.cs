@@ -7,18 +7,15 @@ namespace Modules.Workflow.Features.WorkflowNodes.DeleteNode
 {
     public class DeleteWorkflowNodeHandler : IRequestHandler<DeleteWorkflowNodeCommand, bool>
     {
-        private readonly IWorkflowNodeRepository _nodeRepository;
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<DeleteWorkflowNodeHandler> _logger;
 
         public DeleteWorkflowNodeHandler(
-            IWorkflowNodeRepository nodeRepository,
             IWorkflowRepository workflowRepository,
             ICurrentUserService currentUser,
             ILogger<DeleteWorkflowNodeHandler> logger)
         {
-            _nodeRepository = nodeRepository;
             _workflowRepository = workflowRepository;
             _currentUser = currentUser;
             _logger = logger;
@@ -27,7 +24,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.DeleteNode
         public async Task<bool> Handle(DeleteWorkflowNodeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
-            var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
+            var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
             
             if (workflow == null)
             {
@@ -43,8 +40,8 @@ namespace Modules.Workflow.Features.WorkflowNodes.DeleteNode
                 return false;
             }
 
-            // Get the node to delete
-            var node = await _nodeRepository.GetByIdAsync(request.NodeId, cancellationToken);
+            // Find the node in the workflow
+            var node = workflow.Nodes.FirstOrDefault(n => n.Id == request.NodeId);
             
             if (node == null)
             {
@@ -53,22 +50,15 @@ namespace Modules.Workflow.Features.WorkflowNodes.DeleteNode
                 return false;
             }
 
-            // Verify node belongs to the specified workflow
-            if (node.WorkflowId != request.WorkflowId)
-            {
-                _logger.LogWarning("Node with ID {NodeId} does not belong to workflow {WorkflowId}", 
-                    request.NodeId, request.WorkflowId);
-                return false;
-            }
-
-            // Mark the node as deleted to trigger domain events
-            node.MarkAsDeleted();
+            // Remove the node through the aggregate root, which will raise the appropriate domain event
+            workflow.RemoveNode(request.NodeId);
             
-            // Delete the node
-            await _nodeRepository.DeleteAsync(node, cancellationToken);
+            // Save changes to the workflow aggregate
+            await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Node {NodeId} deleted from workflow {WorkflowId} by user {UserId}", 
-                node.Id, node.WorkflowId, _currentUser.UserId);
+                request.NodeId, request.WorkflowId, _currentUser.UserId);
 
             return true;
         }

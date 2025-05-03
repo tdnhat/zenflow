@@ -35,10 +35,11 @@ namespace Modules.Workflow.Data.Configurations
             builder.Property(n => n.ConfigJson)
                 .HasColumnType("jsonb");
                 
-            // Configure the relationship to Workflow
-            builder.HasOne<DDD.Entities.Workflow>()
+            // Configure the relationship to Workflow - fix to prevent shadow property
+            builder.HasOne(n => n.Workflow)
                 .WithMany(w => w.Nodes)
                 .HasForeignKey(n => n.WorkflowId)
+                .HasConstraintName("FK_WorkflowNodes_Workflows_WorkflowId")
                 .OnDelete(DeleteBehavior.Cascade);
                 
             // Configure audit fields from Aggregate base class

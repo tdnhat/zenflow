@@ -46,7 +46,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
                 workflow.Id,
                 workflow.Name,
                 workflow.Description,
-                workflow.Status,
+                workflow.Status.ToString(),
                 workflow.Nodes.Select(n => new WorkflowNodeDto(
                     n.Id,
                     n.NodeType,

@@ -1,22 +1,12 @@
 using Elsa.Workflows;
 using Elsa.Workflows.Activities;
-using Elsa.Workflows.Builders;
-using Elsa.Workflows.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Services.BrowserAutomation.Activities;
-using Modules.Workflow.Workflows;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
 {
@@ -44,17 +34,11 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
             try
             {
                 _logger.LogInformation("Starting workflow execution for workflow ID {WorkflowId}", request.WorkflowId);
-                
-                // Check if the workflow ID is for the sample browser workflow
-                if (request.WorkflowId.Equals("sample-browser", StringComparison.OrdinalIgnoreCase))
-                {
-                    return await RunSampleBrowserWorkflow(request);
-                }
-                
+
                 // Load the workflow from the database
                 var workflowId = Guid.Parse(request.WorkflowId);
                 var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(workflowId, cancellationToken);
-                
+
                 if (workflow == null)
                 {
                     _logger.LogWarning("Workflow with ID {WorkflowId} not found", request.WorkflowId);
@@ -64,21 +48,21 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                         Message = $"Workflow with ID {request.WorkflowId} not found"
                     };
                 }
-                
+
                 // Create a workflow execution record
                 var workflowExecution = DDD.Entities.WorkflowExecution.Create(workflow.Id);
                 workflowExecution.Start();
-                
+
                 await _executionRepository.AddAsync(workflowExecution, cancellationToken);
                 await _executionRepository.SaveChangesAsync(cancellationToken);
-                
+
                 // Cache the execution ID and workflow ID to use in the background task
                 var executionId = workflowExecution.Id;
                 var capturedWorkflowId = workflow.Id;
-                
+
                 // Start executing the workflow in a background task
                 _ = ExecuteWorkflowAsync(capturedWorkflowId, executionId, request.Input);
-                
+
                 return new RunWorkflowResult
                 {
                     Success = true,
@@ -89,9 +73,9 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing workflow {WorkflowId}: {ErrorMessage}", 
+                _logger.LogError(ex, "Error executing workflow {WorkflowId}: {ErrorMessage}",
                     request.WorkflowId, ex.Message);
-                
+
                 return new RunWorkflowResult
                 {
                     Success = false,
@@ -99,54 +83,13 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                 };
             }
         }
-        
-        private async Task<RunWorkflowResult> RunSampleBrowserWorkflow(RunWorkflowCommand request)
-        {
-            using var scope = _serviceScopeFactory.CreateScope();
-            var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
-            
-            // Apply custom options if provided
-            var optionsBuilder = scope.ServiceProvider.GetRequiredService<IOptionsMonitor<SampleBrowserWorkflowOptions>>();
-            var options = optionsBuilder.CurrentValue;
 
-            // Override options with request parameters if provided
-            if (!string.IsNullOrEmpty(request.SearchTerm))
-            {
-                options.SearchTerm = request.SearchTerm;
-                _logger.LogInformation("Using custom search term: {SearchTerm}", options.SearchTerm);
-            }
 
-            if (request.TakeScreenshots.HasValue)
-            {
-                options.EnableScreenshots = request.TakeScreenshots.Value;
-                _logger.LogInformation("Screenshots enabled: {EnableScreenshots}", options.EnableScreenshots);
-            }
-
-            // Create workflow with custom options
-            var workflowWithOptions = ActivatorUtilities.CreateInstance<SampleBrowserWorkflow>(
-                scope.ServiceProvider,
-                Options.Create(options));
-
-            // Run the workflow
-            var result = await workflowRunner.RunAsync(workflowWithOptions);
-            string instanceId = result.WorkflowState.Id;
-            
-            _logger.LogInformation("Successfully executed browser automation workflow with instance ID {InstanceId}", instanceId);
-
-            return new RunWorkflowResult
-            {
-                Success = true,
-                Message = "Browser automation workflow executed successfully",
-                ExecutionId = instanceId,
-                Status = "Running"
-            };
-        }
-        
         private async Task ExecuteWorkflowAsync(Guid workflowId, Guid executionId, Dictionary<string, object>? input)
         {
             try
             {
-                _logger.LogInformation("Executing workflow {WorkflowId}, execution {ExecutionId}", 
+                _logger.LogInformation("Executing workflow {WorkflowId}, execution {ExecutionId}",
                     workflowId, executionId);
                 using var scope = _serviceScopeFactory.CreateScope();
                 var workflowRepository = scope.ServiceProvider.GetRequiredService<IWorkflowRepository>();
@@ -158,7 +101,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     _logger.LogError("Workflow or execution not found when trying to execute workflow");
                     return;
                 }
-                try 
+                try
                 {
                     var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
                     var serviceProvider = scope.ServiceProvider;
@@ -180,19 +123,19 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     var identityGraphService = serviceProvider.GetRequiredService<IIdentityGraphService>();
                     var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
                     var identityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
-                    
+
                     // Create a workflow definition directly with a Sequence as the root
                     var workflowDefinition = new Sequence { Activities = activities };
-                    
+
                     // Log if we have input variables
                     if (input != null && input.Count > 0)
                     {
                         _logger.LogInformation("Workflow has {Count} input variables", input.Count);
                     }
-                    
+
                     // Run the workflow
                     var workflowInstance = await workflowRunner.RunAsync(workflowDefinition);
-                    
+
                     if (workflowInstance?.WorkflowState?.Id != null)
                     {
                         execution.SetExternalWorkflowId(workflowInstance.WorkflowState.Id);
@@ -206,7 +149,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                         execution.StoreOutput(serializedOutput);
                         _logger.LogInformation("Workflow execution output: {Output}", serializedOutput);
                     }
-                    
+
                     _logger.LogInformation("Workflow execution completed");
                     execution.Complete();
                     await executionRepository.UpdateAsync(execution, CancellationToken.None);
@@ -215,7 +158,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error while executing workflow {WorkflowId}: {ErrorMessage}", 
+                    _logger.LogError(ex, "Error while executing workflow {WorkflowId}: {ErrorMessage}",
                         workflowId, ex.Message);
                     execution.Fail(ex.Message, ex.StackTrace);
                     await executionRepository.UpdateAsync(execution, CancellationToken.None);
@@ -225,7 +168,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while executing workflow {WorkflowId}, execution {ExecutionId}: {ErrorMessage}", 
+                _logger.LogError(ex, "Error while executing workflow {WorkflowId}, execution {ExecutionId}: {ErrorMessage}",
                     workflowId, executionId, ex.Message);
                 try
                 {
@@ -236,6 +179,8 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     {
                         execution.Fail(ex.Message, ex.StackTrace);
                         await executionRepository.UpdateAsync(execution, CancellationToken.None);
+                        await executionRepository.SaveChangesAsync(CancellationToken.None);
+                        _logger.LogInformation("Workflow execution status updated to failed after error: {ErrorMessage}", ex.Message);
                     }
                 }
                 catch (Exception updateEx)
@@ -248,12 +193,12 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
         private IActivity MapNodeToActivity(WorkflowNode node, IServiceProvider serviceProvider)
         {
             var config = JsonSerializer.Deserialize<Dictionary<string, object>>(node.ConfigJson ?? "{}") ?? new();
-            
+
             // Normalize the node type by removing "Activity" suffix and converting to lowercase
             var normalizedType = node.NodeType
                 .Replace("Activity", "", StringComparison.OrdinalIgnoreCase)
                 .ToLowerInvariant();
-            
+
             switch (normalizedType)
             {
                 case "navigate":
@@ -294,6 +239,9 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     wait.Selector = config.TryGetValue("selector", out var ws) ? ws?.ToString() ?? string.Empty : string.Empty;
                     wait.Timeout = config.TryGetValue("timeout", out var wt) && int.TryParse(wt?.ToString(), out var wti) ? wti : 30000;
                     return wait;
+                case "manualtrigger":
+                    // Create a simple trigger activity that acts as a starting point for the workflow
+                    return ActivatorUtilities.CreateInstance<ManualTriggerActivity>(serviceProvider);
                 default:
                     throw new NotSupportedException($"Node type '{node.NodeType}' is not supported.");
             }

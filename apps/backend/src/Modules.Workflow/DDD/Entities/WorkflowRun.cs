@@ -7,7 +7,7 @@ namespace Modules.Workflow.DDD.Entities
     public class WorkflowRun : Aggregate<Guid>
     {
         public Guid WorkflowId { get; private set; }
-        public string Status { get; private set; } = WorkflowRunStatus.QUEUED;
+        public WorkflowRunStatus Status { get; private set; } = WorkflowRunStatus.QUEUED;
         public DateTime StartedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
         public string? Error { get; private set; }

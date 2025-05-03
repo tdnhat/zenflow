@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using Modules.Workflow.DDD.Entities;
 using System.Linq.Expressions;
 using ZenFlow.Shared.Domain;
 
@@ -26,6 +27,9 @@ namespace Modules.Workflow.Data
             return new WorkflowDbContext(optionsBuilder.Options);
         }
     }
+
+    
+
     public class WorkflowDbContext : DbContext
     {
         public WorkflowDbContext(DbContextOptions<WorkflowDbContext> options)
@@ -38,6 +42,7 @@ namespace Modules.Workflow.Data
         public DbSet<DDD.Entities.WorkflowEdge> WorkflowEdges => Set<DDD.Entities.WorkflowEdge>();
         public DbSet<DDD.Entities.WorkflowExecution> WorkflowExecutions => Set<DDD.Entities.WorkflowExecution>();
         public DbSet<DDD.Entities.NodeExecution> NodeExecutions => Set<DDD.Entities.NodeExecution>();
+        public DbSet<WorkflowOutboxMessage> OutboxMessages => Set<WorkflowOutboxMessage>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

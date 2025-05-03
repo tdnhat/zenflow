@@ -34,10 +34,11 @@ namespace Modules.Workflow.Data.Configurations
             
             builder.Property(e => e.ErrorNodeId);
             
-            // Configure the relationship to Workflow
+            // Configure the relationship to Workflow - fix to prevent shadow property creation
             builder.HasOne(e => e.Workflow)
                 .WithMany()
                 .HasForeignKey(e => e.WorkflowId)
+                .HasConstraintName("FK_WorkflowExecutions_Workflows_WorkflowId")
                 .OnDelete(DeleteBehavior.Restrict);
                 
             // Configure the relationship to NodeExecutions

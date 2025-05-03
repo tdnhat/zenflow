@@ -29,6 +29,12 @@ namespace Modules.User.Data.Interceptors
 
             foreach (var entry in eventData.Context.ChangeTracker.Entries())
             {
+                // Skip outbox message entities
+                if (entry.Entity.GetType().Name.EndsWith("OutboxMessage"))
+                {
+                    continue;
+                }
+
                 // Handle audit fields
                 if (entry.State == EntityState.Added || entry.State == EntityState.Modified)
                 {

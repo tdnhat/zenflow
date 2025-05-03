@@ -7,18 +7,15 @@ namespace Modules.Workflow.Features.WorkflowEdges.DeleteEdge
 {
     public class DeleteWorkflowEdgeHandler : IRequestHandler<DeleteWorkflowEdgeCommand, bool>
     {
-        private readonly IWorkflowEdgeRepository _edgeRepository;
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<DeleteWorkflowEdgeHandler> _logger;
 
         public DeleteWorkflowEdgeHandler(
-            IWorkflowEdgeRepository edgeRepository,
             IWorkflowRepository workflowRepository,
             ICurrentUserService currentUser,
             ILogger<DeleteWorkflowEdgeHandler> logger)
         {
-            _edgeRepository = edgeRepository;
             _workflowRepository = workflowRepository;
             _currentUser = currentUser;
             _logger = logger;
@@ -27,7 +24,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.DeleteEdge
         public async Task<bool> Handle(DeleteWorkflowEdgeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
-            var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
+            var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
             
             if (workflow == null)
             {
@@ -43,29 +40,26 @@ namespace Modules.Workflow.Features.WorkflowEdges.DeleteEdge
                 return false;
             }
 
-            // Get the edge
-            var edge = await _edgeRepository.GetByIdAsync(request.EdgeId, cancellationToken);
+            // Find the edge in the workflow
+            var edge = workflow.Edges.FirstOrDefault(e => e.Id == request.EdgeId);
             
             if (edge == null)
             {
-                _logger.LogWarning("Edge with ID {EdgeId} not found", request.EdgeId);
-                return false;
-            }
-
-            // Verify edge belongs to the specified workflow
-            if (edge.WorkflowId != request.WorkflowId)
-            {
-                _logger.LogWarning("Edge with ID {EdgeId} does not belong to workflow {WorkflowId}", 
+                _logger.LogWarning("Edge with ID {EdgeId} not found in workflow {WorkflowId}", 
                     request.EdgeId, request.WorkflowId);
                 return false;
             }
 
-            // Delete the edge
-            await _edgeRepository.DeleteAsync(edge, cancellationToken);
+            // Remove the edge through the aggregate root, which will raise the appropriate domain event
+            workflow.RemoveEdge(request.EdgeId);
+            
+            // Save changes to the workflow aggregate
+            await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Edge {EdgeId} deleted from workflow {WorkflowId} by user {UserId}", 
-                edge.Id, edge.WorkflowId, _currentUser.UserId);
-            
+                request.EdgeId, request.WorkflowId, _currentUser.UserId);
+
             return true;
         }
     }

@@ -37,21 +37,24 @@ namespace Modules.Workflow.Data.Configurations
             builder.Property(e => e.TargetHandle)
                 .HasMaxLength(100);
                 
-            // Configure the relationship to Workflow
-            builder.HasOne<DDD.Entities.Workflow>()
+            // Configure the relationship to Workflow - fix to prevent shadow property
+            builder.HasOne(e => e.Workflow)
                 .WithMany(w => w.Edges)
                 .HasForeignKey(e => e.WorkflowId)
+                .HasConstraintName("FK_WorkflowEdges_Workflows_WorkflowId")
                 .OnDelete(DeleteBehavior.Cascade);
                 
-            // Configure the relationship to source and target nodes
+            // Configure the relationship to source and target nodes with constraint names
             builder.HasOne<WorkflowNode>()
                 .WithMany()
                 .HasForeignKey(e => e.SourceNodeId)
+                .HasConstraintName("FK_WorkflowEdges_WorkflowNodes_SourceNodeId")
                 .OnDelete(DeleteBehavior.Restrict);
                 
             builder.HasOne<WorkflowNode>()
                 .WithMany()
                 .HasForeignKey(e => e.TargetNodeId)
+                .HasConstraintName("FK_WorkflowEdges_WorkflowNodes_TargetNodeId")
                 .OnDelete(DeleteBehavior.Restrict);
                 
             // Configure audit fields from Aggregate base class

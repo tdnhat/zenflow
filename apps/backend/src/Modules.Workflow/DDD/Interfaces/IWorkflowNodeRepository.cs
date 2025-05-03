@@ -1,15 +1,13 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Modules.Workflow.DDD.Interfaces
 {
-    public interface IWorkflowNodeRepository
+    public interface IWorkflowNodeRepository : IRepository<DDD.Entities.WorkflowNode, Guid>
     {
-        Task AddAsync(DDD.Entities.WorkflowNode node, CancellationToken cancellationToken = default);
-        
-        Task<DDD.Entities.WorkflowNode?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        
         Task<IEnumerable<DDD.Entities.WorkflowNode>> GetByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default);
-        
-        Task UpdateAsync(DDD.Entities.WorkflowNode node, CancellationToken cancellationToken = default);
-        
-        Task DeleteAsync(DDD.Entities.WorkflowNode node, CancellationToken cancellationToken = default);
+        Task DeleteAsync(DDD.Entities.WorkflowNode node, CancellationToken cancellationToken = default); // Overload for entity-based deletion
     }
 }

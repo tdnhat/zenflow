@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
-using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
@@ -9,18 +8,15 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
 {
     public class CreateWorkflowNodeHandler : IRequestHandler<CreateWorkflowNodeCommand, WorkflowNodeDto>
     {
-        private readonly IWorkflowNodeRepository _nodeRepository;
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
         private readonly ILogger<CreateWorkflowNodeHandler> _logger;
 
         public CreateWorkflowNodeHandler(
-            IWorkflowNodeRepository nodeRepository,
             IWorkflowRepository workflowRepository,
             ICurrentUserService currentUser,
             ILogger<CreateWorkflowNodeHandler> logger)
         {
-            _nodeRepository = nodeRepository;
             _workflowRepository = workflowRepository;
             _currentUser = currentUser;
             _logger = logger;
@@ -45,9 +41,8 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
                 throw new UnauthorizedAccessException("You do not have permission to modify this workflow");
             }
 
-            // Create the workflow node
-            var node = WorkflowNode.Create(
-                request.WorkflowId,
+            // Add the node through the aggregate root, which will raise the appropriate domain event
+            var node = workflow.AddNode(
                 request.NodeType,
                 request.NodeKind,
                 request.X,
@@ -55,8 +50,10 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
                 request.Label,
                 request.ConfigJson
             );
-
-            await _nodeRepository.AddAsync(node, cancellationToken);
+            
+            // Save changes to the workflow aggregate
+            await _workflowRepository.UpdateAsync(workflow, cancellationToken);
+            await _workflowRepository.SaveChangesAsync(cancellationToken);
 
             _logger.LogInformation("Node {NodeId} created in workflow {WorkflowId} by user {UserId}", 
                 node.Id, node.WorkflowId, _currentUser.UserId);

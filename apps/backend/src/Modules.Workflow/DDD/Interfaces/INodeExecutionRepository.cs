@@ -1,16 +1,15 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+
 namespace Modules.Workflow.DDD.Interfaces
 {
-    public interface INodeExecutionRepository
+    public interface INodeExecutionRepository : IRepository<DDD.Entities.NodeExecution, Guid>
     {
-        Task AddAsync(DDD.Entities.NodeExecution nodeExecution, CancellationToken cancellationToken = default);
-        
         Task<IEnumerable<DDD.Entities.NodeExecution>> GetByWorkflowExecutionIdAsync(Guid workflowExecutionId, CancellationToken cancellationToken = default);
         
-        Task<DDD.Entities.NodeExecution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
-        
         Task<DDD.Entities.NodeExecution?> GetByNodeIdAndExecutionIdAsync(Guid nodeId, Guid workflowExecutionId, CancellationToken cancellationToken = default);
-        
-        Task UpdateAsync(DDD.Entities.NodeExecution nodeExecution, CancellationToken cancellationToken = default);
         
         Task AddRangeAsync(IEnumerable<DDD.Entities.NodeExecution> nodeExecutions, CancellationToken cancellationToken = default);
     }

@@ -3,8 +3,6 @@ using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
-using ZenFlow.Shared.Application.Models;
-using System.Linq;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflows
 {
@@ -36,7 +34,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
 
             // Map entity results to DTOs
             var workflowDtos = workflows.Select(w =>
-                new WorkflowDto(w.Id, w.Name, w.Description, w.Status)).ToList();
+                new WorkflowDto(w.Id, w.Name, w.Description, w.Status.ToString())).ToList();
 
             _logger.LogInformation("Retrieved {Count} workflows for user {UserId} (Total: {Total})",
                 workflowDtos.Count, userId, workflows.Count);

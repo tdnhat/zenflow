@@ -13,6 +13,7 @@ export default function Dashboard() {
         if (!isLoading && isAuthenticated) {
             apiClient
                 .post("/workflows/445b8b39-0210-4e86-a62c-47216fafa522/run", {
+                // .get("/workflows/445b8b39-0210-4e86-a62c-47216fafa522", {
                 })
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));

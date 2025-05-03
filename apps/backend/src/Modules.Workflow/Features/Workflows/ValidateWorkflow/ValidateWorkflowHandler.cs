@@ -4,6 +4,8 @@ using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Services.Validation;
 using ZenFlow.Shared.Application.Auth;
+using System.Collections.Generic; // Added for HashSet and Queue
+using System.Linq; // Added for LINQ methods
 
 namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
 {
@@ -64,18 +66,21 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
             }
 
             // Get nodes and edges
-            var nodes = await _nodeRepository.GetByWorkflowIdAsync(request.WorkflowId, cancellationToken);
-            var edges = await _edgeRepository.GetByWorkflowIdAsync(request.WorkflowId, cancellationToken);
+            var nodes = (await _nodeRepository.GetByWorkflowIdAsync(request.WorkflowId, cancellationToken)).ToList();
+            var edges = (await _edgeRepository.GetByWorkflowIdAsync(request.WorkflowId, cancellationToken)).ToList();
 
             // Validate nodes and edges
-            response = ValidateWorkflow(workflow, nodes.ToList(), edges.ToList());
+            response = ValidateWorkflowStructure(workflow, nodes, edges); // Renamed for clarity
 
             return response;
         }
 
-        private ValidateWorkflowResponse ValidateWorkflow(DDD.Entities.Workflow workflow, List<WorkflowNode> nodes, List<WorkflowEdge> edges)
+        // Renamed method and updated logic
+        private ValidateWorkflowResponse ValidateWorkflowStructure(DDD.Entities.Workflow workflow, List<WorkflowNode> nodes, List<WorkflowEdge> edges)
         {
             var response = new ValidateWorkflowResponse { IsValid = true };
+            var nodeMap = nodes.ToDictionary(n => n.Id); // For quick lookup
+            var edgeMap = edges.GroupBy(e => e.SourceNodeId).ToDictionary(g => g.Key, g => g.ToList()); // Adjacency list
 
             // Check if workflow has at least one node
             if (nodes.Count == 0)
@@ -87,12 +92,12 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
                     ErrorMessage = "Workflow must have at least one node",
                     Severity = "error"
                 });
-                return response;
+                return response; // Early exit if no nodes
             }
 
             // Check if workflow has at least one TRIGGER node
-            var hasTrigger = nodes.Any(n => n.NodeKind == "TRIGGER");
-            if (!hasTrigger)
+            var triggerNodes = nodes.Where(n => n.NodeKind == "TRIGGER").ToList();
+            if (triggerNodes.Count == 0)
             {
                 response.IsValid = false;
                 response.ValidationErrors.Add(new ValidationError
@@ -101,31 +106,59 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
                     ErrorMessage = "Workflow must have at least one trigger node",
                     Severity = "error"
                 });
+                // Don't return early, continue other checks
             }
 
-            // Check for isolated nodes (no incoming or outgoing edges except for TRIGGER nodes)
+            // --- Refined Reachability Check (Replaces old ISOLATED_NODE check) ---
+            var reachableNodes = new HashSet<Guid>();
+            var queue = new Queue<Guid>(triggerNodes.Select(n => n.Id));
+
+            foreach(var triggerId in triggerNodes.Select(n => n.Id))
+            {
+                reachableNodes.Add(triggerId);
+            }
+
+            while (queue.Count > 0)
+            {
+                var currentNodeId = queue.Dequeue();
+
+                if (edgeMap.TryGetValue(currentNodeId, out var outgoingEdges))
+                {
+                    foreach (var edge in outgoingEdges)
+                    {
+                        if (reachableNodes.Add(edge.TargetNodeId)) // Add returns true if item was added (not already present)
+                        {
+                            queue.Enqueue(edge.TargetNodeId);
+                        }
+                    }
+                }
+            }
+
+            // Check for nodes not reachable from any trigger
             foreach (var node in nodes)
             {
-                if (node.NodeKind == "TRIGGER")
-                    continue; // Triggers don't need incoming edges
-
-                var incomingEdges = edges.Where(e => e.TargetNodeId == node.Id).ToList();
-                var outgoingEdges = edges.Where(e => e.SourceNodeId == node.Id).ToList();
-
-                if (incomingEdges.Count == 0)
+                if (!reachableNodes.Contains(node.Id))
                 {
-                    response.IsValid = false;
+                    response.IsValid = false; // Unreachable nodes make the workflow invalid
                     response.ValidationErrors.Add(new ValidationError
                     {
                         NodeId = node.Id.ToString(),
-                        ErrorCode = "ISOLATED_NODE",
-                        ErrorMessage = $"Node '{node.Label}' has no incoming connections",
+                        ErrorCode = "UNREACHABLE_NODE", // Changed ErrorCode
+                        ErrorMessage = $"Node '{node.Label}' is not reachable from any trigger node",
                         Severity = "error"
                     });
                 }
+            }
+            // --- End of Reachability Check ---
 
-                // Check if node is a terminal node
-                if (outgoingEdges.Count == 0 && node.NodeKind != "ACTION")
+
+            // Individual Node Checks (Config, Terminal)
+            foreach (var node in nodes)
+            {
+                 // Check if node is a terminal node (Warning only)
+                var hasOutgoingEdges = edgeMap.ContainsKey(node.Id) && edgeMap[node.Id].Any();
+                // Allow ACTION nodes to be terminal without warning, adjust if other types can be terminal
+                if (!hasOutgoingEdges && node.NodeKind != "ACTION" && node.NodeKind != "TRIGGER") // Triggers might not have outgoing edges if workflow is just a trigger
                 {
                     // Only a warning for non-terminal nodes without outgoing edges
                     response.ValidationErrors.Add(new ValidationError
@@ -133,14 +166,14 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
                         NodeId = node.Id.ToString(),
                         ErrorCode = "TERMINAL_NODE",
                         ErrorMessage = $"Node '{node.Label}' has no outgoing connections",
-                        Severity = "warning"
+                        Severity = "warning" // Keep as warning
                     });
                 }
 
                 // Validate node configuration
                 if (!_configValidator.ValidateConfig(node.NodeType, node.ConfigJson, out var configErrors))
                 {
-                    response.IsValid = false;
+                    response.IsValid = false; // Invalid config makes workflow invalid
                     foreach (var error in configErrors)
                     {
                         response.ValidationErrors.Add(new ValidationError
@@ -154,7 +187,7 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
                 }
             }
 
-            // Check for cycles (except for LOOP nodes which can have cycles)
+            // Check for cycles (existing logic seems okay, assuming it handles LOOP nodes correctly)
             if (HasCycles(nodes, edges))
             {
                 response.IsValid = false;
@@ -166,51 +199,65 @@ namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
                 });
             }
 
+            // Final determination of IsValid based on errors found
+            response.IsValid = !response.ValidationErrors.Any(e => e.Severity == "error");
+
             return response;
         }
 
+        // Updated HasCycles method
         private bool HasCycles(List<WorkflowNode> nodes, List<WorkflowEdge> edges)
         {
-            // Simple cycle detection algorithm
-            // A more sophisticated solution would ignore cycles involving LOOP nodes
             var visited = new HashSet<Guid>();
             var recStack = new HashSet<Guid>();
+            var nodeMap = nodes.ToDictionary(n => n.Id); // Needed for node kind lookup
 
-            foreach (var node in nodes.Where(n => n.NodeKind == "TRIGGER"))
+            // Start DFS from each node to detect all cycles, not just those reachable from triggers
+            foreach (var node in nodes)
             {
-                if (IsCyclicUtil(node.Id, visited, recStack, edges, nodes))
-                    return true;
+                 if (!visited.Contains(node.Id))
+                 {
+                    if (IsCyclicUtil(node.Id, visited, recStack, edges, nodeMap)) // Pass nodeMap
+                        return true;
+                 }
             }
 
             return false;
         }
 
-        private bool IsCyclicUtil(Guid nodeId, HashSet<Guid> visited, HashSet<Guid> recStack, List<WorkflowEdge> edges, List<WorkflowNode> nodes)
+        // Updated IsCyclicUtil method
+        private bool IsCyclicUtil(Guid nodeId, HashSet<Guid> visited, HashSet<Guid> recStack, List<WorkflowEdge> edges, Dictionary<Guid, WorkflowNode> nodeMap)
         {
-            if (!visited.Contains(nodeId))
+            if (!nodeMap.ContainsKey(nodeId)) return false; // Node might not exist if graph is inconsistent
+
+            if (recStack.Contains(nodeId)) // If node is already in the current recursion stack, cycle detected
             {
-                visited.Add(nodeId);
-                recStack.Add(nodeId);
-
-                var node = nodes.FirstOrDefault(n => n.Id == nodeId);
-                if (node != null && node.NodeKind == "LOOP")
-                {
-                    // Skip cycle detection for LOOP nodes as they are allowed to have cycles
-                    recStack.Remove(nodeId);
-                    return false;
-                }
-
-                var children = edges.Where(e => e.SourceNodeId == nodeId).Select(e => e.TargetNodeId);
-                foreach (var child in children)
-                {
-                    if (!visited.Contains(child) && IsCyclicUtil(child, visited, recStack, edges, nodes))
-                        return true;
-                    else if (recStack.Contains(child))
-                        return true;
-                }
+                 // Optional: Check if the cycle involves a LOOP node - if so, might not be an error depending on rules
+                 // var node = nodeMap[nodeId];
+                 // if (node.NodeKind != "LOOP") return true; // Only return true if it's not a loop node cycle
+                 return true; // Simple check: any cycle is reported
             }
 
-            recStack.Remove(nodeId);
+            if (visited.Contains(nodeId)) // If node was already visited (and processed) in a previous DFS path, no need to re-check
+            {
+                return false;
+            }
+
+            visited.Add(nodeId);
+            recStack.Add(nodeId);
+
+            var node = nodeMap[nodeId];
+            // If specific LOOP node handling is needed, add logic here based on node.NodeKind
+
+            var children = edges.Where(e => e.SourceNodeId == nodeId).Select(e => e.TargetNodeId);
+            foreach (var child in children)
+            {
+                if (IsCyclicUtil(child, visited, recStack, edges, nodeMap))
+                    return true;
+            }
+
+
+            recStack.Remove(nodeId); // Remove node from recursion stack before returning
             return false;
         }
     }

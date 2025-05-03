@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow;
 
-namespace Modules.Workflow.Endpoints.Workflows
+namespace Modules.Workflow.Endpoints.WorkflowExecutions
 {
     public class RunWorkflow : ICarterModule
     {
@@ -15,7 +15,7 @@ namespace Modules.Workflow.Endpoints.Workflows
             {
                 // Set the workflow ID from the route parameter
                 command = command with { WorkflowId = id };
-                
+
                 var result = await sender.Send(command);
 
                 if (!result.Success)
@@ -32,4 +32,4 @@ namespace Modules.Workflow.Endpoints.Workflows
             .Produces(StatusCodes.Status400BadRequest);
         }
     }
-} 
+}

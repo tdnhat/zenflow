@@ -3,17 +3,17 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Modules.Workflow.Features.WorkflowExecutions.RunSampleBrowserWorkflow;
+using Modules.Workflow.Features.WorkflowExecutions.StopSampleBrowserWorkflow;
 
-namespace Modules.Workflow.Endpoints.Workflows
+namespace Modules.Workflow.Endpoints.WorkflowExecutions
 {
-    public class RunSampleBrowserWorkflow : ICarterModule
+    public class StopSampleBrowserWorkflow : ICarterModule
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/api/workflows/sample-browser/run", async (ISender sender) =>
+            app.MapPost("/api/workflows/sample-browser/stop", async (StopSampleBrowserWorkflowCommand command, ISender sender) =>
             {
-                var result = await sender.Send(new RunSampleBrowserWorkflowCommand());
+                var result = await sender.Send(command);
 
                 if (!result.Success)
                 {
@@ -24,9 +24,9 @@ namespace Modules.Workflow.Endpoints.Workflows
             })
             .RequireAuthorization()
             .WithTags("Workflows")
-            .WithName("Workflows_RunSampleBrowserWorkflow")
-            .Produces<RunSampleBrowserWorkflowResult>(StatusCodes.Status200OK)
+            .WithName("Workflows_StopSampleBrowserWorkflow")
+            .Produces<StopSampleBrowserWorkflowResult>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status400BadRequest);
         }
     }
-} 
+}

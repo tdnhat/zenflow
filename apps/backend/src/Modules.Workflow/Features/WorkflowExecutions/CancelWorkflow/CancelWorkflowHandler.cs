@@ -29,7 +29,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
                 _logger.LogInformation("Attempting to cancel latest execution for workflow ID {WorkflowId}", workflowIdGuid);
 
                 // Find the latest execution for the workflow ID that might be running or pending
-                var executions = await _executionRepository.GetByWorkflowIdAsync(workflowIdGuid, 0, 1, cancellationToken);
+                var executions = await _executionRepository.GetByWorkflowIdAsync(workflowIdGuid, cancellationToken);
                 var latestExecution = executions.FirstOrDefault();
 
                 if (latestExecution == null)

@@ -45,6 +45,15 @@ namespace Modules.Workflow.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        // New overload implementation
+        public async Task<List<DDD.Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.WorkflowExecutions
+                .Where(e => e.WorkflowId == workflowId)
+                .OrderByDescending(e => e.StartedAt)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<int> CountAsync(CancellationToken cancellationToken = default)
         {
             return await _dbContext.WorkflowExecutions.CountAsync(cancellationToken);
@@ -87,29 +96,6 @@ namespace Modules.Workflow.Repositories
             return await _dbContext.WorkflowExecutions
                 .Include(e => e.NodeExecutions)
                 .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
-        }
-
-        public async Task<IEnumerable<DDD.Entities.WorkflowExecution>> GetFilteredAsync(WorkflowExecutionsFilterRequest filter, CancellationToken cancellationToken = default)
-        {
-            // Start with a base query
-            var query = _dbContext.WorkflowExecutions
-                .AsNoTracking();
-
-            // Apply basic filters
-            if (filter.WorkflowId.HasValue)
-            {
-                query = query.Where(e => e.WorkflowId == filter.WorkflowId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(filter.Status))
-            {
-                query = query.Where(e => e.Status == filter.Status);
-            }
-
-            // Return the filtered results
-            return await query
-                .OrderByDescending(e => e.StartedAt)
-                .ToListAsync(cancellationToken);
         }
     }
 }

@@ -12,7 +12,7 @@ namespace Modules.Workflow.DDD.Interfaces
     {
         Task<Entities.WorkflowExecution?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<List<Entities.WorkflowExecution>> GetAllAsync(int skip = 0, int take = 50, CancellationToken cancellationToken = default);
-        Task<List<Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, int skip = 0, int take = 50, CancellationToken cancellationToken = default);
+        Task<List<Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default); // Add this overload
         Task<int> CountAsync(CancellationToken cancellationToken = default);
         Task<int> CountByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default);
         Task AddAsync(Entities.WorkflowExecution execution, CancellationToken cancellationToken = default);

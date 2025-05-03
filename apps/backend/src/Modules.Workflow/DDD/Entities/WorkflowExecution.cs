@@ -14,6 +14,8 @@ namespace Modules.Workflow.DDD.Entities
         public string? ErrorMessage { get; private set; }
         public string? ErrorStack { get; private set; }
         public Guid? ErrorNodeId { get; private set; }
+        public string? ExternalWorkflowId { get; private set; }
+        public string? OutputData { get; private set; }
         
         // Navigation property
         public Workflow? Workflow { get; private set; }
@@ -68,26 +70,31 @@ namespace Modules.Workflow.DDD.Entities
             AddDomainEvent(new WorkflowExecutionCompletedEvent(Id, WorkflowId));
         }
 
-        public void Fail(string errorMessage, string? errorStack = null, Guid? nodeId = null)
+        public void Fail(string? errorMessage, string? errorStack, Guid? errorNodeId = null)
         {
-            if (Status != WorkflowExecutionStatus.RUNNING)
-            {
-                throw new InvalidOperationException($"Cannot fail workflow execution in {Status} status");
-            }
-
             Status = WorkflowExecutionStatus.FAILED;
-            CompletedAt = DateTime.UtcNow;
             ErrorMessage = errorMessage;
             ErrorStack = errorStack;
-            ErrorNodeId = nodeId;
+            ErrorNodeId = errorNodeId;
+            CompletedAt = DateTime.UtcNow;
             
             // Raise domain event
-            AddDomainEvent(new WorkflowExecutionFailedEvent(Id, WorkflowId, errorMessage, nodeId));
+            AddDomainEvent(new WorkflowExecutionFailedEvent(Id, WorkflowId, errorMessage ?? "Unknown error"));
+        }
+
+        public void SetExternalWorkflowId(string externalWorkflowId)
+        {
+            ExternalWorkflowId = externalWorkflowId;
+        }
+
+        public void StoreOutput(string outputData)
+        {
+            OutputData = outputData;
         }
 
         public void Cancel()
         {
-            if (Status != WorkflowExecutionStatus.RUNNING && Status != WorkflowExecutionStatus.PENDING)
+            if (Status == WorkflowExecutionStatus.COMPLETED || Status == WorkflowExecutionStatus.FAILED)
             {
                 throw new InvalidOperationException($"Cannot cancel workflow execution in {Status} status");
             }

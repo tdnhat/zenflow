@@ -1,14 +1,20 @@
 using Elsa.Workflows;
+using Elsa.Workflows.Activities;
+using Elsa.Workflows.Builders;
+using Elsa.Workflows.Models;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
+using Modules.Workflow.Services.BrowserAutomation.Activities;
 using Modules.Workflow.Workflows;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -142,52 +148,92 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
             {
                 _logger.LogInformation("Executing workflow {WorkflowId}, execution {ExecutionId}", 
                     workflowId, executionId);
-                
-                // Create a new scope for the background task
                 using var scope = _serviceScopeFactory.CreateScope();
-                
-                // Get fresh repository instances from the new scope
                 var workflowRepository = scope.ServiceProvider.GetRequiredService<IWorkflowRepository>();
                 var executionRepository = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionRepository>();
-                
-                // Load the workflow and execution from the database
                 var workflow = await workflowRepository.GetByIdWithNodesAndEdgesAsync(workflowId, CancellationToken.None);
                 var execution = await executionRepository.GetByIdAsync(executionId, CancellationToken.None);
-                
                 if (workflow == null || execution == null)
                 {
                     _logger.LogError("Workflow or execution not found when trying to execute workflow");
                     return;
                 }
-                
-                // Here you would convert your workflow model to an Elsa workflow and execute it
-                // For now, we'll just simulate workflow execution
-                await Task.Delay(1000); // Simulate workflow processing time
-                
-                // Update execution status to completed
-                execution.Complete();
-                await executionRepository.UpdateAsync(execution, CancellationToken.None);
-                
-                _logger.LogInformation("Workflow {WorkflowId} execution {ExecutionId} completed successfully", 
-                    workflowId, executionId);
+                try 
+                {
+                    var workflowRunner = scope.ServiceProvider.GetRequiredService<IWorkflowRunner>();
+                    var serviceProvider = scope.ServiceProvider;
+                    var orderedNodes = GetOrderedNodes(workflow);
+                    var activities = new List<IActivity>();
+                    foreach (var node in orderedNodes)
+                    {
+                        try
+                        {
+                            activities.Add(MapNodeToActivity(node, serviceProvider));
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "Failed to map node {NodeId} to activity: {Error}", node.Id, ex.Message);
+                            throw;
+                        }
+                    }
+                    var activityVisitor = serviceProvider.GetRequiredService<IActivityVisitor>();
+                    var identityGraphService = serviceProvider.GetRequiredService<IIdentityGraphService>();
+                    var activityRegistry = serviceProvider.GetRequiredService<IActivityRegistry>();
+                    var identityGenerator = serviceProvider.GetRequiredService<IIdentityGenerator>();
+                    
+                    // Create a workflow definition directly with a Sequence as the root
+                    var workflowDefinition = new Sequence { Activities = activities };
+                    
+                    // Log if we have input variables
+                    if (input != null && input.Count > 0)
+                    {
+                        _logger.LogInformation("Workflow has {Count} input variables", input.Count);
+                    }
+                    
+                    // Run the workflow
+                    var workflowInstance = await workflowRunner.RunAsync(workflowDefinition);
+                    
+                    if (workflowInstance?.WorkflowState?.Id != null)
+                    {
+                        execution.SetExternalWorkflowId(workflowInstance.WorkflowState.Id);
+                    }
+
+                    // Store output if workflow completed successfully
+                    if (workflowInstance?.WorkflowState?.Output != null)
+                    {
+                        var output = workflowInstance.WorkflowState.Output;
+                        var serializedOutput = JsonSerializer.Serialize(output);
+                        execution.StoreOutput(serializedOutput);
+                        _logger.LogInformation("Workflow execution output: {Output}", serializedOutput);
+                    }
+                    
+                    _logger.LogInformation("Workflow execution completed");
+                    execution.Complete();
+                    await executionRepository.UpdateAsync(execution, CancellationToken.None);
+                    await executionRepository.SaveChangesAsync(CancellationToken.None);
+                    _logger.LogInformation("Workflow execution status updated to completed");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error while executing workflow {WorkflowId}: {ErrorMessage}", 
+                        workflowId, ex.Message);
+                    execution.Fail(ex.Message, ex.StackTrace);
+                    await executionRepository.UpdateAsync(execution, CancellationToken.None);
+                    await executionRepository.SaveChangesAsync(CancellationToken.None);
+                    _logger.LogInformation("Workflow execution status updated to failed");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error while executing workflow {WorkflowId}, execution {ExecutionId}: {ErrorMessage}", 
                     workflowId, executionId, ex.Message);
-                
                 try
                 {
-                    // Create a new scope for error handling
                     using var scope = _serviceScopeFactory.CreateScope();
                     var executionRepository = scope.ServiceProvider.GetRequiredService<IWorkflowExecutionRepository>();
-                    
-                    // Load the execution record
                     var execution = await executionRepository.GetByIdAsync(executionId, CancellationToken.None);
-                    
                     if (execution != null)
                     {
-                        // Update execution status to failed
                         execution.Fail(ex.Message, ex.StackTrace);
                         await executionRepository.UpdateAsync(execution, CancellationToken.None);
                     }
@@ -198,5 +244,92 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                 }
             }
         }
+
+        private IActivity MapNodeToActivity(WorkflowNode node, IServiceProvider serviceProvider)
+        {
+            var config = JsonSerializer.Deserialize<Dictionary<string, object>>(node.ConfigJson ?? "{}") ?? new();
+            
+            // Normalize the node type by removing "Activity" suffix and converting to lowercase
+            var normalizedType = node.NodeType
+                .Replace("Activity", "", StringComparison.OrdinalIgnoreCase)
+                .ToLowerInvariant();
+            
+            switch (normalizedType)
+            {
+                case "navigate":
+                    var nav = ActivatorUtilities.CreateInstance<NavigateActivity>(serviceProvider);
+                    nav.Url = config.TryGetValue("url", out var url) ? url?.ToString() ?? string.Empty : string.Empty;
+                    nav.Timeout = config.TryGetValue("timeout", out var timeout) && int.TryParse(timeout?.ToString(), out var t) ? t : 60000;
+                    nav.WaitUntil = config.TryGetValue("waitUntil", out var waitUntil) ? waitUntil?.ToString() ?? "load" : "load";
+                    return nav;
+                case "click":
+                    var click = ActivatorUtilities.CreateInstance<ClickActivity>(serviceProvider);
+                    click.Selector = config.TryGetValue("selector", out var selector) ? selector?.ToString() ?? string.Empty : string.Empty;
+                    click.RequireVisible = config.TryGetValue("requireVisible", out var requireVisible) && bool.TryParse(requireVisible?.ToString(), out var rv) ? rv : true;
+                    click.Delay = config.TryGetValue("delay", out var delay) && int.TryParse(delay?.ToString(), out var d) ? d : 0;
+                    click.Force = config.TryGetValue("force", out var force) && bool.TryParse(force?.ToString(), out var f) ? f : false;
+                    click.AfterDelay = config.TryGetValue("afterDelay", out var afterDelay) && int.TryParse(afterDelay?.ToString(), out var ad) ? ad : 0;
+                    return click;
+                case "inputtext": // Changed from "input"
+                    var inputText = ActivatorUtilities.CreateInstance<InputTextActivity>(serviceProvider);
+                    inputText.Selector = config.TryGetValue("selector", out var sel) ? sel?.ToString() ?? string.Empty : string.Empty;
+                    inputText.Text = config.TryGetValue("text", out var text) ? text?.ToString() ?? string.Empty : string.Empty;
+                    inputText.TypeDelay = config.TryGetValue("typeDelay", out var td) && int.TryParse(td?.ToString(), out var tdi) ? tdi : 0;
+                    inputText.ClearFirst = config.TryGetValue("clearFirst", out var cf) && bool.TryParse(cf?.ToString(), out var cfb) ? cfb : true;
+                    return inputText;
+                case "screenshot":
+                    var screenshot = ActivatorUtilities.CreateInstance<ScreenshotActivity>(serviceProvider);
+                    screenshot.FullPage = config.TryGetValue("fullPage", out var fp) && bool.TryParse(fp?.ToString(), out var fpb) ? fpb : false;
+                    screenshot.Selector = config.TryGetValue("selector", out var ss) ? ss?.ToString() : null;
+                    return screenshot;
+                case "extractdata":
+                    var extract = ActivatorUtilities.CreateInstance<ExtractDataActivity>(serviceProvider);
+                    extract.Selector = config.TryGetValue("selector", out var es) ? es?.ToString() ?? string.Empty : string.Empty;
+                    extract.PropertyToExtract = config.TryGetValue("propertyToExtract", out var pte) ? pte?.ToString() ?? "innerText" : "innerText";
+                    extract.ExtractAll = config.TryGetValue("extractAll", out var ea) && bool.TryParse(ea?.ToString(), out var eab) ? eab : false;
+                    extract.OutputVariableName = config.TryGetValue("outputVariableName", out var ovn) ? ovn?.ToString() ?? "extractedData" : "extractedData";
+                    return extract;
+                case "waitforselector":
+                    var wait = ActivatorUtilities.CreateInstance<WaitForSelectorActivity>(serviceProvider);
+                    wait.Selector = config.TryGetValue("selector", out var ws) ? ws?.ToString() ?? string.Empty : string.Empty;
+                    wait.Timeout = config.TryGetValue("timeout", out var wt) && int.TryParse(wt?.ToString(), out var wti) ? wti : 30000;
+                    return wait;
+                default:
+                    throw new NotSupportedException($"Node type '{node.NodeType}' is not supported.");
+            }
+        }
+
+        private List<WorkflowNode> GetOrderedNodes(DDD.Entities.Workflow workflow)
+        {
+            // Simple topological sort: start with nodes that have no incoming edges
+            var nodes = workflow.Nodes.ToDictionary(n => n.Id, n => n);
+            var edges = workflow.Edges;
+            var incoming = new Dictionary<Guid, int>();
+            foreach (var node in nodes.Values)
+                incoming[node.Id] = 0;
+            foreach (var edge in edges)
+                if (incoming.ContainsKey(edge.TargetNodeId))
+                    incoming[edge.TargetNodeId]++;
+            var queue = new Queue<Guid>(incoming.Where(kv => kv.Value == 0).Select(kv => kv.Key));
+            var ordered = new List<WorkflowNode>();
+            var visited = new HashSet<Guid>();
+            while (queue.Count > 0)
+            {
+                var id = queue.Dequeue();
+                if (!visited.Add(id)) continue;
+                if (nodes.TryGetValue(id, out var node))
+                    ordered.Add(node);
+                foreach (var edge in edges.Where(e => e.SourceNodeId == id))
+                {
+                    if (incoming.ContainsKey(edge.TargetNodeId))
+                    {
+                        incoming[edge.TargetNodeId]--;
+                        if (incoming[edge.TargetNodeId] == 0)
+                            queue.Enqueue(edge.TargetNodeId);
+                    }
+                }
+            }
+            return ordered;
+        }
     }
-} 
+}

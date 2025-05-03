@@ -197,9 +197,21 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     {
                         execution.SetExternalWorkflowId(workflowInstance.WorkflowState.Id);
                     }
+
+                    // Store output if workflow completed successfully
+                    if (workflowInstance?.WorkflowState?.Output != null)
+                    {
+                        var output = workflowInstance.WorkflowState.Output;
+                        var serializedOutput = JsonSerializer.Serialize(output);
+                        execution.StoreOutput(serializedOutput);
+                        _logger.LogInformation("Workflow execution output: {Output}", serializedOutput);
+                    }
+                    
                     _logger.LogInformation("Workflow execution completed");
                     execution.Complete();
                     await executionRepository.UpdateAsync(execution, CancellationToken.None);
+                    await executionRepository.SaveChangesAsync(CancellationToken.None);
+                    _logger.LogInformation("Workflow execution status updated to completed");
                 }
                 catch (Exception ex)
                 {
@@ -207,6 +219,8 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                         workflowId, ex.Message);
                     execution.Fail(ex.Message, ex.StackTrace);
                     await executionRepository.UpdateAsync(execution, CancellationToken.None);
+                    await executionRepository.SaveChangesAsync(CancellationToken.None);
+                    _logger.LogInformation("Workflow execution status updated to failed");
                 }
             }
             catch (Exception ex)
@@ -256,7 +270,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     click.Force = config.TryGetValue("force", out var force) && bool.TryParse(force?.ToString(), out var f) ? f : false;
                     click.AfterDelay = config.TryGetValue("afterDelay", out var afterDelay) && int.TryParse(afterDelay?.ToString(), out var ad) ? ad : 0;
                     return click;
-                case "input":
+                case "inputtext": // Changed from "input"
                     var inputText = ActivatorUtilities.CreateInstance<InputTextActivity>(serviceProvider);
                     inputText.Selector = config.TryGetValue("selector", out var sel) ? sel?.ToString() ?? string.Empty : string.Empty;
                     inputText.Text = config.TryGetValue("text", out var text) ? text?.ToString() ?? string.Empty : string.Empty;

@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
-using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Infrastructure.Outbox;
 using System;
 using System.Text.Json;
@@ -31,13 +30,13 @@ namespace Modules.Workflow.Infrastructure.Events
 
         public async Task PublishAsync(IDomainEvent domainEvent)
         {
-            _logger.LogInformation("Storing workflow domain event {EventType} with ID {EventId} in outbox",
+            _logger.LogInformation("Processing workflow domain event {EventType} with ID {EventId}",
                 domainEvent.GetType().Name, domainEvent.EventId);
 
-            // 1. Store in outbox for reliable messaging
             try
             {
-                await _outboxRepository.AddAsync(new WorkflowOutboxMessage
+                // Store in a separate transaction to prevent concurrency issues
+                var outboxMessage = new WorkflowOutboxMessage
                 {
                     Id = Guid.NewGuid(),
                     EventType = domainEvent.GetType().AssemblyQualifiedName,
@@ -45,23 +44,29 @@ namespace Modules.Workflow.Infrastructure.Events
                     OccurredOn = DateTime.UtcNow,
                     ProcessedOn = null,
                     RetryCount = 0
-                });
+                };
+
+                await _outboxRepository.AddInSeparateTransactionAsync(outboxMessage);
+                _logger.LogDebug("Domain event {EventType} stored in outbox", domainEvent.GetType().Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to store workflow domain event {EventType} in outbox", domainEvent.GetType().Name);
-                throw;
+                _logger.LogError(ex, "Failed to store workflow domain event {EventType} in outbox", 
+                    domainEvent.GetType().Name);
+                // Don't rethrow here - we'll still try to publish in-process
             }
 
-            // 2. Publish in-process for immediate handling
+            // Publish in-process for immediate handling
             try
             {
                 await _mediator.Publish(domainEvent);
+                _logger.LogDebug("Domain event {EventType} published in-process", domainEvent.GetType().Name);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to publish workflow domain event {EventType} in-process", domainEvent.GetType().Name);
-                // We don't rethrow here, as the event is already in the outbox for later processing
+                _logger.LogError(ex, "Failed to publish workflow domain event {EventType} in-process", 
+                    domainEvent.GetType().Name);
+                // We don't rethrow here either - the event is already in the outbox for later processing
             }
         }
     }

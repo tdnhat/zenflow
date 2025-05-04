@@ -49,5 +49,16 @@ namespace Modules.Workflow.DDD.Entities
             Label = label;
             ConfigJson = configJson;
         }
+
+        // Enhanced update method for bulk operations, including all node properties
+        internal void Update(string nodeType, string nodeKind, float x, float y, string label, string configJson)
+        {
+            NodeType = nodeType;
+            NodeKind = nodeKind;
+            X = x;
+            Y = y;
+            Label = label;
+            ConfigJson = configJson;
+        }
     }
 }

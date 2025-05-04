@@ -41,6 +41,21 @@ namespace Modules.Workflow.DDD.Entities
             // Raise domain event
             AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
         }
+        
+        // Update basic workflow information - used for bulk update operations
+        public void UpdateBasicInfo(string name, string description)
+        {
+            if (Status == WorkflowStatus.ARCHIVED)
+            {
+                throw new InvalidOperationException("Cannot modify an archived workflow");
+            }
+            
+            Name = name;
+            Description = description;
+
+            // Raise domain event
+            AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
+        }
 
         public void Archive()
         {

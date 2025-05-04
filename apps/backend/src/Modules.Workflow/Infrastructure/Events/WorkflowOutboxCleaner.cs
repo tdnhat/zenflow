@@ -1,7 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Infrastructure.Outbox;
 using System;
 using System.Threading;

@@ -1,14 +1,10 @@
+using MassTransit;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.Infrastructure.Outbox;
-using System;
 using System.Text.Json;
-using System.Threading;
-using System.Threading.Tasks;
 using ZenFlow.Shared.Domain;
-using MassTransit;
-using Modules.Workflow.DDD.Interfaces;
 
 namespace Modules.Workflow.Infrastructure.Events
 {

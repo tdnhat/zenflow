@@ -1,0 +1,32 @@
+version: '3.4'
+
+services:
+  # Temporarily disabled - not running from docker
+  # api:
+  #   image: ${DOCKER_REGISTRY-}api
+  #   build:
+  #     context: .
+  #     dockerfile: Bootstrapper/Api/Dockerfile
+
+  identity:
+    image: quay.io/keycloak/keycloak:24.0.3
+
+  messagebus:
+    image: rabbitmq:management
+
+  # Temporarily disabled - not implemented yet
+  # distributedcache:
+  #   image: redis
+
+  # Temporarily disabled - not implemented yet
+  # seq:
+  #   image: datalust/seq:latest
+
+volumes:
+  rabbitmq-data:
+  # redis-data:
+  # seq-data:
+
+networks:
+  zenflow-network:
+    driver: bridge

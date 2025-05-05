@@ -36,14 +36,14 @@ namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
                 {
                     var execution = await _executionRepository.GetByIdAsync(executionId, cancellationToken);
                     if (execution == null)
-                    {
+                {
                         _logger.LogWarning("Execution with ID {ExecutionId} not found", request.ExecutionId);
                         return new CancelWorkflowResult
                         {
                             Success = false,
                             Message = $"Execution with ID {request.ExecutionId} not found"
                         };
-                    }
+                }
 
                     // Cancel browser sessions associated with this execution
                     await _browserSessionManager.CloseSessionAsync(execution.Id.ToString(), cancellationToken);
@@ -55,7 +55,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
                         
                     execution.Cancel(reason);
                     await _executionRepository.UpdateAsync(execution, cancellationToken);
-                    await _executionRepository.SaveChangesAsync(cancellationToken);
+                        await _executionRepository.SaveChangesAsync(cancellationToken);
 
                     _logger.LogInformation("Successfully canceled execution {ExecutionId}", execution.Id);
                     return new CancelWorkflowResult

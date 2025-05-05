@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 // Paths that are accessible for unauthenticated users
-const publicPaths = ["/", "/auth/signin", "/auth/error"];
+const publicPaths = ["/", "/signin", "/auth/error"];
 
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname;
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to signin if there's no session
   if (!token) {
-    const url = new URL("/auth/signin", request.url);
+    const url = new URL("/signin", request.url);
     url.searchParams.set("callbackUrl", path);
     return NextResponse.redirect(url);
   }

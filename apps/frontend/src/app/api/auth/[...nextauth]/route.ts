@@ -116,8 +116,8 @@ const handler = NextAuth({
     // maxAge: 60 * 60, // 1 hour
   },
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/signin",
+    error: "/error",
   },
   // Enable debug in development
   debug: process.env.NODE_ENV === "development",

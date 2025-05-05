@@ -29,7 +29,7 @@ namespace Modules.Workflow.Infrastructure.Extensions
                    .AddActivity<ClickActivity>()
                    .AddActivity<InputTextActivity>()
                    .AddActivity<WaitForSelectorActivity>()
-                   .AddActivity<ExtractDataActivity>()
+                   .AddActivity<CrawlDataActivity>()
                    .AddActivity<ScreenshotActivity>();
 
             });

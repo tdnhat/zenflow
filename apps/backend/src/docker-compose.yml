@@ -24,6 +24,7 @@ services:
 
 volumes:
   rabbitmq-data:
+  keycloak-data:
   # redis-data:
   # seq-data:
 

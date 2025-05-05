@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
 using Modules.Workflow.Services.BrowserAutomation.Activities;
 using System.Text.Json;
 
@@ -16,17 +17,20 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
         private readonly ILogger<RunWorkflowHandler> _logger;
         private readonly IWorkflowRepository _workflowRepository;
         private readonly IWorkflowExecutionRepository _executionRepository;
+        private readonly IActivityMapperFactory _activityMapperFactory;
 
         public RunWorkflowHandler(
             IServiceScopeFactory serviceScopeFactory,
             ILogger<RunWorkflowHandler> logger,
             IWorkflowRepository workflowRepository,
-            IWorkflowExecutionRepository executionRepository)
+            IWorkflowExecutionRepository executionRepository,
+            IActivityMapperFactory activityMapperFactory)
         {
             _serviceScopeFactory = serviceScopeFactory;
             _logger = logger;
             _workflowRepository = workflowRepository;
             _executionRepository = executionRepository;
+            _activityMapperFactory = activityMapperFactory;
         }
 
         public async Task<RunWorkflowResult> Handle(RunWorkflowCommand request, CancellationToken cancellationToken)
@@ -199,52 +203,15 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                 .Replace("Activity", "", StringComparison.OrdinalIgnoreCase)
                 .ToLowerInvariant();
 
-            switch (normalizedType)
+            // Get the appropriate mapper for this activity type
+            var mapper = _activityMapperFactory.GetMapper(normalizedType);
+            if (mapper == null)
             {
-                case "navigate":
-                    var nav = ActivatorUtilities.CreateInstance<NavigateActivity>(serviceProvider);
-                    nav.Url = config.TryGetValue("url", out var url) ? url?.ToString() ?? string.Empty : string.Empty;
-                    nav.Timeout = config.TryGetValue("timeout", out var timeout) && int.TryParse(timeout?.ToString(), out var t) ? t : 60000;
-                    nav.WaitUntil = config.TryGetValue("waitUntil", out var waitUntil) ? waitUntil?.ToString() ?? "load" : "load";
-                    return nav;
-                case "click":
-                    var click = ActivatorUtilities.CreateInstance<ClickActivity>(serviceProvider);
-                    click.Selector = config.TryGetValue("selector", out var selector) ? selector?.ToString() ?? string.Empty : string.Empty;
-                    click.RequireVisible = config.TryGetValue("requireVisible", out var requireVisible) && bool.TryParse(requireVisible?.ToString(), out var rv) ? rv : true;
-                    click.Delay = config.TryGetValue("delay", out var delay) && int.TryParse(delay?.ToString(), out var d) ? d : 0;
-                    click.Force = config.TryGetValue("force", out var force) && bool.TryParse(force?.ToString(), out var f) ? f : false;
-                    click.AfterDelay = config.TryGetValue("afterDelay", out var afterDelay) && int.TryParse(afterDelay?.ToString(), out var ad) ? ad : 0;
-                    return click;
-                case "inputtext": // Changed from "input"
-                    var inputText = ActivatorUtilities.CreateInstance<InputTextActivity>(serviceProvider);
-                    inputText.Selector = config.TryGetValue("selector", out var sel) ? sel?.ToString() ?? string.Empty : string.Empty;
-                    inputText.Text = config.TryGetValue("text", out var text) ? text?.ToString() ?? string.Empty : string.Empty;
-                    inputText.TypeDelay = config.TryGetValue("typeDelay", out var td) && int.TryParse(td?.ToString(), out var tdi) ? tdi : 0;
-                    inputText.ClearFirst = config.TryGetValue("clearFirst", out var cf) && bool.TryParse(cf?.ToString(), out var cfb) ? cfb : true;
-                    return inputText;
-                case "screenshot":
-                    var screenshot = ActivatorUtilities.CreateInstance<ScreenshotActivity>(serviceProvider);
-                    screenshot.FullPage = config.TryGetValue("fullPage", out var fp) && bool.TryParse(fp?.ToString(), out var fpb) ? fpb : false;
-                    screenshot.Selector = config.TryGetValue("selector", out var ss) ? ss?.ToString() : null;
-                    return screenshot;
-                case "extractdata":
-                    var extract = ActivatorUtilities.CreateInstance<ExtractDataActivity>(serviceProvider);
-                    extract.Selector = config.TryGetValue("selector", out var es) ? es?.ToString() ?? string.Empty : string.Empty;
-                    extract.PropertyToExtract = config.TryGetValue("propertyToExtract", out var pte) ? pte?.ToString() ?? "innerText" : "innerText";
-                    extract.ExtractAll = config.TryGetValue("extractAll", out var ea) && bool.TryParse(ea?.ToString(), out var eab) ? eab : false;
-                    extract.OutputVariableName = config.TryGetValue("outputVariableName", out var ovn) ? ovn?.ToString() ?? "extractedData" : "extractedData";
-                    return extract;
-                case "waitforselector":
-                    var wait = ActivatorUtilities.CreateInstance<WaitForSelectorActivity>(serviceProvider);
-                    wait.Selector = config.TryGetValue("selector", out var ws) ? ws?.ToString() ?? string.Empty : string.Empty;
-                    wait.Timeout = config.TryGetValue("timeout", out var wt) && int.TryParse(wt?.ToString(), out var wti) ? wti : 30000;
-                    return wait;
-                case "manualtrigger":
-                    // Create a simple trigger activity that acts as a starting point for the workflow
-                    return ActivatorUtilities.CreateInstance<ManualTriggerActivity>(serviceProvider);
-                default:
-                    throw new NotSupportedException($"Node type '{node.NodeType}' is not supported.");
+                throw new NotSupportedException($"Node type '{node.NodeType}' is not supported.");
             }
+
+            // Use the mapper to create and configure the activity
+            return mapper.MapToActivity(normalizedType, config, serviceProvider);
         }
 
         private List<WorkflowNode> GetOrderedNodes(DDD.Entities.Workflow workflow)

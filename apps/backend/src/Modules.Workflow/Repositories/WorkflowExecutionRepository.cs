@@ -80,10 +80,36 @@ namespace Modules.Workflow.Repositories
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            // Dispatch domain events before saving changes
-            await DispatchDomainEventsAsync();
+            var domainEvents = CollectDomainEvents();
+            // Process domain events - this will add them to the DbContext but not save yet
+            if (domainEvents.Any())
+            {
+                foreach (var domainEvent in domainEvents)
+                {
+                    await _domainEventService.PublishAsync(domainEvent);
+                }
+            }
             
             await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        private List<IDomainEvent> CollectDomainEvents()
+        {
+            // Get all entities with domain events
+            var entitiesWithEvents = _dbContext.ChangeTracker.Entries<Aggregate<Guid>>()
+                .Select(e => e.Entity)
+                .Where(e => e.DomainEvents.Any())
+                .ToList();
+
+            // Get all domain events
+            var domainEvents = entitiesWithEvents
+                .SelectMany(e => e.DomainEvents)
+                .ToList();
+
+            // Clear domain events from entities
+            entitiesWithEvents.ForEach(e => e.ClearDomainEvents());
+
+            return domainEvents;
         }
 
         private async Task DispatchDomainEventsAsync()

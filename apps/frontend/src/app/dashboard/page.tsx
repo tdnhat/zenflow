@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useNextAuth } from "@/lib/auth/useNextAuth";
 import apiClient from "@/lib/api/apiClient";
+import { Button } from "@/components/ui/button";
+import { ModeToggle } from "@/styles/theme/mode-toggle";
 
 export default function Dashboard() {
     const { isAuthenticated, isLoading, user, login, logout } = useNextAuth();
@@ -49,12 +51,8 @@ export default function Dashboard() {
                 <h1 className="text-2xl font-bold">Dashboard</h1>
                 <div className="flex items-center gap-4">
                     <span>Welcome, {user?.name || "User"}</span>
-                    <button
-                        onClick={() => logout()}
-                        className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition"
-                    >
-                        Logout
-                    </button>
+                    <ModeToggle />
+                    <Button onClick={() => logout()}>Logout</Button>
                 </div>
             </div>
 

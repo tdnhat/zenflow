@@ -96,9 +96,6 @@ export interface GetWorkflowsRequest {
  */
 export interface GetWorkflowsResponse {
   workflows: Workflow[];
-  totalCount: number;
-  page: number;
-  pageSize: number;
 }
 
 /**

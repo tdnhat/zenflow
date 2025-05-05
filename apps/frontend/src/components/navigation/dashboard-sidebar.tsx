@@ -9,7 +9,7 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
-import { Header } from "@/components/global/header";
+import { Header } from "@/components/layouts/header";
 import { Logo } from "./logo";
 import { DesktopNavLink, NavLink } from "./nav-link";
 import { MobileSidebarContent } from "./mobile-sidebar";
@@ -41,7 +41,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
     const toggleSidebar = () => {
-        setSidebarOpen(prev => !prev);
+        setSidebarOpen((prev) => !prev);
     };
 
     return (
@@ -62,16 +62,24 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
                     <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
                         {/* Toggle button replacing logo */}
                         <div className="flex items-center mb-6">
-                            <Button 
-                                variant="ghost" 
+                            <Button
+                                variant="ghost"
                                 size="icon"
                                 onClick={toggleSidebar}
-                                className="h-8 w-8 p-0 text-sidebar-foreground hover:text-sidebar-primary transition-colors"
-                                aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                                className="h-8 w-8 p-0 text-sidebar-foreground hover:text-sidebar-primary dark:text-sidebar-foreground dark:hover:text-sidebar-primary transition-colors"
+                                aria-label={
+                                    sidebarOpen
+                                        ? "Collapse sidebar"
+                                        : "Expand sidebar"
+                                }
                                 tabIndex={0}
                             >
                                 <IconMenu2 className="h-5 w-5" />
-                                <span className="sr-only">{sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}</span>
+                                <span className="sr-only">
+                                    {sidebarOpen
+                                        ? "Collapse sidebar"
+                                        : "Expand sidebar"}
+                                </span>
                             </Button>
                             {sidebarOpen && <Logo />}
                         </div>
@@ -121,4 +129,4 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             </div>
         </div>
     );
-} 
+}

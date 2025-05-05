@@ -16,7 +16,7 @@ export function useNextAuth() {
 
         const logoutUrl = `${keycloakUrl}/realms/${realm}/protocol/openid-connect/logout`;
         const redirectUri = encodeURIComponent(
-            `${window.location.origin}/auth/signin`
+            `${window.location.origin}/signin`
         );
 
         const fullLogoutUrl = `${logoutUrl}?post_logout_redirect_uri=${redirectUri}&id_token_hint=${session.idToken}`;

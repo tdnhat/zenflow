@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useNextAuth } from "@/lib/auth/useNextAuth";
 import apiClient from "@/lib/api/apiClient";
-import { DashboardLayout } from "@/components/layouts/dashboard-layout";
-
 export default function Dashboard() {
     const { isAuthenticated, isLoading, login } = useNextAuth();
     const [apiMessage, setApiMessage] = useState("");
@@ -45,23 +43,21 @@ export default function Dashboard() {
     }
 
     return (
-        <DashboardLayout>
-            <div className="space-y-6">
-                <h1 className="text-2xl font-bold">Dashboard</h1>
-                
-                <div className="bg-card p-6 rounded-lg shadow">
-                    <h2 className="text-xl font-bold mb-4">
-                        API Response
-                    </h2>
-                    {error ? (
-                        <p className="text-red-500">{error}</p>
-                    ) : apiMessage ? (
-                        <p className="break-words font-mono text-sm">{apiMessage}</p>
-                    ) : (
-                        <p>Loading API data...</p>
-                    )}
-                </div>
+        <div className="space-y-6">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+
+            <div className="bg-card p-6 rounded-lg shadow">
+                <h2 className="text-xl font-bold mb-4">API Response</h2>
+                {error ? (
+                    <p className="text-red-500">{error}</p>
+                ) : apiMessage ? (
+                    <p className="break-words font-mono text-sm">
+                        {apiMessage}
+                    </p>
+                ) : (
+                    <p>Loading API data...</p>
+                )}
             </div>
-        </DashboardLayout>
+        </div>
     );
 }

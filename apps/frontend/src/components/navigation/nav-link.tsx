@@ -1,15 +1,20 @@
+"use client";
 import { usePathname } from "next/navigation";
+import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 
-interface NavLink {
+export interface NavLink {
     label: string;
     href: string;
     icon: React.ReactNode;
 }
 
+interface DesktopNavLinkProps {
+    link: NavLink;
+    isExpanded: boolean;
+}
 
-export function DesktopNavLink({ link, isExpanded }: { link: NavLink, isExpanded: boolean }) {
+export function DesktopNavLink({ link, isExpanded }: DesktopNavLinkProps) {
     // Get current path to detect active link
     const pathname = usePathname();
     const isActive = pathname === link.href;
@@ -49,4 +54,4 @@ export function DesktopNavLink({ link, isExpanded }: { link: NavLink, isExpanded
             </motion.span>
         </a>
     );
-}
+} 

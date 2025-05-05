@@ -34,7 +34,7 @@ namespace Modules.Workflow.Features.Workflows.CreateWorkflow
 
             _logger.LogInformation("Workflow {Id} created by user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue());
+            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue(), workflow.CreatedAt, workflow.LastModifiedAt);
         }
     }
 }

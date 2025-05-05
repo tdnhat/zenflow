@@ -1,12 +1,20 @@
 ﻿namespace Modules.Workflow.Dtos
 {
-    public record WorkflowDto(Guid Id, string Name, string Description, string Status);
+    public record WorkflowDto(
+        Guid Id, 
+        string Name,
+        string Description, 
+        string Status, 
+        DateTime? CreatedAt,
+        DateTime? LastModifiedAt);
     
     public record WorkflowDetailDto(
         Guid Id, 
         string Name, 
         string Description, 
         string Status,
+        DateTime? CreatedAt,
+        DateTime? LastModifiedAt,
         IEnumerable<WorkflowNodeDto> Nodes,
         IEnumerable<WorkflowEdgeDto> Edges);
         

@@ -2,55 +2,79 @@
 
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { WorkflowList } from "./_components/workflow-list";
 import { useWorkflows } from "./_hooks/use-workflows";
+import { WorkflowModal } from "./_components/workflow-modal";
+import { useWorkflowStore } from "@/store/workflow.store";
+import { memo } from "react";
+import WorkflowListSkeleton from "./_components/workflow-list-skeleton";
+
+// Memoize the EmptyState component to prevent unnecessary re-renders
+const EmptyState = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
+    <div className="bg-card p-12 rounded-lg shadow flex flex-col items-center justify-center gap-4">
+        <p className="text-muted-foreground">No workflows found</p>
+        <Button variant="outline" onClick={onCreateClick}>
+            Create your first workflow
+        </Button>
+    </div>
+));
+EmptyState.displayName = 'EmptyState';
+
+// Memoize the header component
+const PageHeader = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
+    <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Workflows</h1>
+        <Button className="flex items-center gap-2" onClick={onCreateClick}>
+            <Plus className="h-4 w-4" />
+            Create Workflow
+        </Button>
+    </div>
+));
+PageHeader.displayName = 'PageHeader';
 
 export default function Workflows() {
+    const { openModal } = useWorkflowStore();
     const {
-        data: workflows,
-        isLoading: isLoadingWorkflows,
-        error: errorWorkflows,
+        data: workflows = [],
+        isLoading,
+        error,
     } = useWorkflows();
 
-    if (isLoadingWorkflows) {
-        return <div>Loading...</div>;
-    }
+    const handleCreateClick = () => {
+        openModal();
+    };
 
-    if (errorWorkflows) {
-        return <div>Error: {errorWorkflows.message}</div>;
-    }
+    // Render page content based on loading/error state
+    const renderContent = () => {
+        if (isLoading) {
+            return <WorkflowListSkeleton />;
+        }
+
+        if (error) {
+            return (
+                <div className="p-6 rounded-lg border border-destructive bg-destructive/10 text-destructive">
+                    <h2 className="text-lg font-semibold mb-2">Error</h2>
+                    <p>{error.message || 'Failed to load workflows'}</p>
+                </div>
+            );
+        }
+
+        return workflows.length === 0 ? (
+            <EmptyState onCreateClick={handleCreateClick} />
+        ) : (
+            <WorkflowList workflows={workflows} />
+        );
+    };
 
     return (
         <div className="space-y-6">
-            {/* Header with title and create button */}
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold">Workflows</h1>
-                <Link href="/workflows/new">
-                    <Button className="flex items-center gap-2">
-                        <Plus className="h-4 w-4" />
-                        Create Workflow
-                    </Button>
-                </Link>
+            <PageHeader onCreateClick={handleCreateClick} />
+            
+            <div className="space-y-4">
+                {renderContent()}
             </div>
 
-            {/* Workflows list */}
-            <div className="space-y-4">
-                {workflows && workflows.length === 0 ? (
-                    <div className="bg-card p-12 rounded-lg shadow flex flex-col items-center justify-center gap-4">
-                        <p className="text-muted-foreground">
-                            No workflows found
-                        </p>
-                        <Link href="/workflows/new">
-                            <Button variant="outline">
-                                Create your first workflow
-                            </Button>
-                        </Link>
-                    </div>
-                ) : (
-                    <WorkflowList workflows={workflows || []} />
-                )}
-            </div>
+            <WorkflowModal />
         </div>
     );
 }

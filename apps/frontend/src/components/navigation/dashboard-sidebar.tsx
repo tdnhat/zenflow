@@ -120,7 +120,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             />
 
             <div className="flex flex-1">
-                <div className="flex h-full w-full flex-1 flex-col gap-2 bg-card p-2 md:p-10">
+                <div className="flex h-full w-full flex-1 flex-col gap-2 bg-card">
                     <Header onOpenSidebar={() => setSidebarOpen(true)} />
                     <main className="flex-1 overflow-y-auto p-4 md:p-6 text-card-foreground">
                         {children}

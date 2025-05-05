@@ -48,6 +48,8 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
                 workflow.Name,
                 workflow.Description,
                 workflow.Status.ToStringValue(),
+                workflow.CreatedAt,
+                workflow.LastModifiedAt,
                 workflow.Nodes.Select(n => new WorkflowNodeDto(
                     n.Id,
                     n.NodeType,

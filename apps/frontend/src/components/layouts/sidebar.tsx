@@ -42,14 +42,6 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             icon: <IconArrowLeft className="h-5 w-5 shrink-0" />,
         },
     ];
-
-    // Create a user profile link
-    const userLink: NavLink = {
-        label: "ZenFlow User",
-        href: "/profile",
-        icon: <User className="h-5 w-5 shrink-0" />,
-    };
-
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
@@ -63,12 +55,12 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
             <motion.div
                 className="h-full hidden md:flex md:flex-col bg-sidebar border-r shrink-0"
                 animate={{
-                    width: sidebarOpen ? "240px" : "68px",
+                    width: sidebarOpen ? "300px" : "68px",
                 }}
                 onMouseEnter={() => setSidebarOpen(true)}
                 onMouseLeave={() => setSidebarOpen(false)}
             >
-                <div className="px-4 py-4 flex-1 flex flex-col justify-between">
+                <div className="px-4 py-4 flex-1 flex flex-col justify-between gap-10">
                     <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
                         {/* Logo */}
                         {sidebarOpen ? <Logo /> : <LogoIcon />}
@@ -86,9 +78,15 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
                     </div>
 
                     {/* User link */}
-                    <div className="mt-8">
+                    <div>
                         <DesktopNavLink
-                            link={userLink}
+                            link={{
+                                label: "ZenFlow User",
+                                href: "#",
+                                icon: (
+                                    <User className="h-5 w-5 shrink-0 rounded-full" />
+                                ),
+                            }}
                             isExpanded={sidebarOpen}
                         />
                     </div>
@@ -100,7 +98,6 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
                 isOpen={sidebarOpen}
                 onClose={() => setSidebarOpen(false)}
                 links={links}
-                userLink={userLink}
             />
 
             <div className="flex flex-1">
@@ -166,48 +163,15 @@ interface MobileSidebarContentProps {
     isOpen: boolean;
     onClose: () => void;
     links: NavLink[];
-    userLink: NavLink;
 }
 
 function MobileSidebarContent({
     isOpen,
     onClose,
     links,
-    userLink,
 }: MobileSidebarContentProps) {
     // Get current path to detect active link
     const pathname = usePathname();
-
-    // Render a mobile nav link
-    const renderNavLink = (link: NavLink) => {
-        const isActive = pathname === link.href;
-        return (
-            <a
-                key={link.href}
-                href={link.href}
-                className={cn(
-                    "flex items-center gap-3 py-2 px-3 rounded-md transition-all",
-                    isActive
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent/10"
-                )}
-            >
-                <div
-                    className={cn(
-                        "flex items-center justify-center transition-all",
-                        isActive
-                            ? "text-primary scale-110"
-                            : "text-sidebar-foreground hover:text-sidebar-primary hover:scale-105"
-                    )}
-                >
-                    {link.icon}
-                </div>
-                <span className="text-base">
-                    {link.label}
-                </span>
-            </a>
-        );
-    };
 
     return (
         <div className="fixed inset-0 z-[91] pointer-events-none md:hidden">
@@ -233,13 +197,37 @@ function MobileSidebarContent({
                             <span className="sr-only">Close menu</span>
                         </Button>
 
-                        <div className="pt-8 flex flex-col h-full justify-between">
+                        <div className="pt-8 flex flex-col h-full">
                             <div className="flex flex-col gap-2">
-                                {links.map(renderNavLink)}
-                            </div>
-                            
-                            <div className="mb-8 border-t border-sidebar-border pt-4">
-                                {renderNavLink(userLink)}
+                                {links.map((link, idx) => {
+                                    const isActive = pathname === link.href;
+                                    return (
+                                        <a
+                                            key={idx}
+                                            href={link.href}
+                                            className={cn(
+                                                "flex items-center gap-3 py-2 px-3 rounded-md transition-all",
+                                                isActive
+                                                    ? "bg-primary/10 text-primary font-medium"
+                                                    : "text-sidebar-foreground hover:text-sidebar-primary hover:bg-sidebar-accent/10"
+                                            )}
+                                        >
+                                            <div
+                                                className={cn(
+                                                    "flex items-center justify-center transition-all",
+                                                    isActive
+                                                        ? "text-primary scale-110"
+                                                        : "text-sidebar-foreground hover:text-sidebar-primary hover:scale-105"
+                                                )}
+                                            >
+                                                {link.icon}
+                                            </div>
+                                            <span className="text-base">
+                                                {link.label}
+                                            </span>
+                                        </a>
+                                    );
+                                })}
                             </div>
                         </div>
                     </motion.div>
@@ -255,7 +243,7 @@ export const Logo = () => {
             href="/dashboard"
             className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
         >
-            <IconBrandTabler className="h-5 w-5 ml-2 shrink-0" />
+            <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-primary" />
             <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -271,9 +259,9 @@ export const LogoIcon = () => {
     return (
         <a
             href="/dashboard"
-            className="relative z-20 flex items-center py-1 text-sm font-normal"
+            className="relative z-20 flex items-center space-x-2 py-1 text-sm font-normal"
         >
-            <IconBrandTabler className="h-5 w-5 ml-2 shrink-0" />
+            <div className="h-5 w-6 shrink-0 rounded-tl-lg rounded-tr-sm rounded-br-lg rounded-bl-sm bg-primary" />
         </a>
     );
 };

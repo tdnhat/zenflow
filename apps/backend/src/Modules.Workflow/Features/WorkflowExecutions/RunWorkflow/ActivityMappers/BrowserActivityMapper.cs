@@ -31,6 +31,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappe
                 "crawldata" => true,
                 "extractdata" => true,
                 "waitforselector" => true,
+                "manualtrigger" => true,
                 _ => false
             };
         }
@@ -50,6 +51,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappe
                 "screenshot" => CreateScreenshotActivity(config, serviceProvider),
                 "crawldata" or "extractdata" => CreateCrawlDataActivity(config, serviceProvider),
                 "waitforselector" => CreateWaitForSelectorActivity(config, serviceProvider),
+                "manualtrigger" => CreateManualTriggerActivity(serviceProvider),
                 _ => throw new NotSupportedException($"Browser activity type '{activityType}' is not supported")
             };
         }
@@ -114,6 +116,11 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappe
             wait.Timeout = config.TryGetValue("timeout", out var wt) && int.TryParse(wt?.ToString(), out var wti) ? wti : 30000;
             wait.State = config.TryGetValue("state", out var state) ? state?.ToString() ?? "visible" : "visible";
             return wait;
+        }
+
+        private ManualTriggerActivity CreateManualTriggerActivity(IServiceProvider serviceProvider)
+        {
+            return ActivatorUtilities.CreateInstance<ManualTriggerActivity>(serviceProvider);
         }
     }
 } 

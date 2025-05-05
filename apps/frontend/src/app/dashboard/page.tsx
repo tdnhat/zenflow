@@ -12,7 +12,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .post("/workflows/2a3e98bd-4ac3-4e43-b127-6cc21a74152c/cancel", {})
+                .post("/workflows/2a3e98bd-4ac3-4e43-b127-6cc21a74152c/run", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })

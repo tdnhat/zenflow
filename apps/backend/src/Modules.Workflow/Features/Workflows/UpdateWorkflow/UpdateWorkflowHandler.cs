@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
 
@@ -47,7 +48,7 @@ namespace Modules.Workflow.Features.Workflows.UpdateWorkflow
             await _workflowRepository.SaveChangesAsync(cancellationToken);
             _logger.LogInformation("Updated workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToString());
+            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue());
         }
     }
 }

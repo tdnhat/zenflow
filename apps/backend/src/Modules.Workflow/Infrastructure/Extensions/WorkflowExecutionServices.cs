@@ -15,7 +15,11 @@ namespace Modules.Workflow.Infrastructure.Extensions
             services.AddSingleton<IBrowserAutomation, BrowserAutomation>();
             services.AddSingleton<IBrowserSessionManager, BrowserSessionManager>();
             services.AddScoped<IWorkflowLifecycleHandler, WorkflowCleanupHandler>();
+            
+            // Register activity mappers
             services.AddScoped<IActivityMapperFactory, ActivityMapperFactory>();
+            services.AddScoped<IActivityMapper, BrowserActivityMapper>();
+            services.AddScoped<IActivityMapper, DefaultActivityMapper>();
 
             // Add Elsa services
             services.AddElsa(elsa =>
@@ -32,7 +36,8 @@ namespace Modules.Workflow.Infrastructure.Extensions
                    .AddActivity<InputTextActivity>()
                    .AddActivity<WaitForSelectorActivity>()
                    .AddActivity<CrawlDataActivity>()
-                   .AddActivity<ScreenshotActivity>();
+                   .AddActivity<ScreenshotActivity>()
+                   .AddActivity<ManualTriggerActivity>();
 
             });
 

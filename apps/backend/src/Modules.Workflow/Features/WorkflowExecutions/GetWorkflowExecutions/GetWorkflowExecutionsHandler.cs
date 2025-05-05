@@ -2,6 +2,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Dtos;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
@@ -36,7 +37,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
                     e.Id,
                     e.WorkflowId,
                     e.WorkflowVersion,
-                    e.Status.ToString(),
+                    e.Status.ToStringValue(),
                     e.StartedAt,
                     e.CompletedAt
                 )).ToList();

@@ -1,6 +1,7 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -62,7 +63,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
                         Success = true,
                         Message = "Workflow execution canceled successfully",
                         ExecutionId = execution.Id.ToString(),
-                        Status = execution.Status.ToString()
+                        Status = execution.Status.ToStringValue()
                     };
                 }
                 // Otherwise, look up by workflow ID
@@ -99,7 +100,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
                         Success = true,
                         Message = "Workflow execution canceled successfully",
                         ExecutionId = execution.Id.ToString(),
-                        Status = execution.Status.ToString()
+                        Status = execution.Status.ToStringValue()
                     };
                 }
                 else

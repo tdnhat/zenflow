@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
 
@@ -34,7 +35,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
 
             // Map entity results to DTOs
             var workflowDtos = workflows.Select(w =>
-                new WorkflowDto(w.Id, w.Name, w.Description, w.Status.ToString())).ToList();
+                new WorkflowDto(w.Id, w.Name, w.Description, w.Status.ToStringValue())).ToList();
 
             _logger.LogInformation("Retrieved {Count} workflows for user {UserId} (Total: {Total})",
                 workflowDtos.Count, userId, workflows.Count);

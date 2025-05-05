@@ -7,6 +7,6 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
         public bool Success { get; set; }
         public string? Message { get; set; }
         public string? ExecutionId { get; set; }
-        public WorkflowExecutionStatus? Status { get; set; }
+        public string? Status { get; set; }
     }
 } 

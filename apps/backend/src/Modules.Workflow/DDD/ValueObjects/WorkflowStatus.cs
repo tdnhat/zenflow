@@ -32,7 +32,7 @@
                 DRAFT_STRING => WorkflowStatus.DRAFT,
                 ACTIVE_STRING => WorkflowStatus.ACTIVE,
                 ARCHIVED_STRING => WorkflowStatus.ARCHIVED,
-                _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+                _ => WorkflowStatus.DRAFT // Default to DRAFT instead of throwing an exception
             };
         }
     }

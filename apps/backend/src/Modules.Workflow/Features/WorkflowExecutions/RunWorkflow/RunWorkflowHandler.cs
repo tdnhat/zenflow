@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
 using Modules.Workflow.Services.BrowserAutomation.Activities;
 using System.Text.Json;
@@ -72,7 +73,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                     Success = true,
                     Message = "Workflow execution started",
                     ExecutionId = workflowExecution.Id.ToString(),
-                    Status = workflowExecution.Status
+                    Status = workflowExecution.Status.ToStringValue()
                 };
             }
             catch (Exception ex)
@@ -203,15 +204,29 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow
                 .Replace("Activity", "", StringComparison.OrdinalIgnoreCase)
                 .ToLowerInvariant();
 
+            _logger.LogDebug("Mapping node {NodeId} with type {OriginalType} to normalized type {NormalizedType}", 
+                node.Id, node.NodeType, normalizedType);
+
             // Get the appropriate mapper for this activity type
             var mapper = _activityMapperFactory.GetMapper(normalizedType);
             if (mapper == null)
             {
+                _logger.LogError("No mapper found for node type {NodeType} (normalized: {NormalizedType})", 
+                    node.NodeType, normalizedType);
                 throw new NotSupportedException($"Node type '{node.NodeType}' is not supported.");
             }
 
-            // Use the mapper to create and configure the activity
-            return mapper.MapToActivity(normalizedType, config, serviceProvider);
+            try
+            {
+                // Use the mapper to create and configure the activity
+                return mapper.MapToActivity(normalizedType, config, serviceProvider);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to map node {NodeId} with type {NodeType} to activity: {ErrorMessage}", 
+                    node.Id, node.NodeType, ex.Message);
+                throw;
+            }
         }
 
         private List<WorkflowNode> GetOrderedNodes(DDD.Entities.Workflow workflow)

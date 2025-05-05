@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
 
@@ -46,7 +47,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
                 workflow.Id,
                 workflow.Name,
                 workflow.Description,
-                workflow.Status.ToString(),
+                workflow.Status.ToStringValue(),
                 workflow.Nodes.Select(n => new WorkflowNodeDto(
                     n.Id,
                     n.NodeType,

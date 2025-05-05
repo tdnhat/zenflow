@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
 
@@ -33,7 +34,7 @@ namespace Modules.Workflow.Features.Workflows.CreateWorkflow
 
             _logger.LogInformation("Workflow {Id} created by user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToString());
+            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue());
         }
     }
 }

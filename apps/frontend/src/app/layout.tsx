@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import NextAuthProvider from "@/lib/auth/NextAuthProvider";
 import { ThemeProvider } from "@/components/ui/theme-provider";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+    variable: "--font-dm-sans",
     subsets: ["latin"],
 });
 
@@ -27,7 +27,7 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body
-                className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+                className={`${dmSans.variable} ${geistMono.variable} antialiased`}
             >
                 <ThemeProvider
                     attribute="class"

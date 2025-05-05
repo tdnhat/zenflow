@@ -5,14 +5,15 @@ import {
     IconBrandTabler,
     IconSettings,
     IconUserBolt,
+    IconMenu2,
 } from "@tabler/icons-react";
-import { motion } from "motion/react";
 import { cn } from "@/lib/utils";
 import { User } from "lucide-react";
 import { Header } from "@/components/global/header";
-import { Logo, LogoIcon } from "./logo";
+import { Logo } from "./logo";
 import { DesktopNavLink, NavLink } from "./nav-link";
 import { MobileSidebarContent } from "./mobile-sidebar";
+import { Button } from "@/components/ui/button";
 
 export function DashboardSidebar({ children }: { children: React.ReactNode }) {
     const links: NavLink[] = [
@@ -23,21 +24,25 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
         },
         {
             label: "Workflows",
-            href: "/dashboard/workflows",
+            href: "/workflows",
             icon: <IconUserBolt className="h-5 w-5 shrink-0" />,
         },
         {
             label: "Reports",
-            href: "/dashboard/reports",
+            href: "/reports",
             icon: <IconSettings className="h-5 w-5 shrink-0" />,
         },
         {
             label: "Settings",
-            href: "/dashboard/settings",
+            href: "/settings",
             icon: <IconArrowLeft className="h-5 w-5 shrink-0" />,
         },
     ];
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(true);
+
+    const toggleSidebar = () => {
+        setSidebarOpen(prev => !prev);
+    };
 
     return (
         <div
@@ -46,19 +51,30 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
                 "h-screen"
             )}
         >
-            {/* Desktop sidebar with hover effect */}
-            <motion.div
-                className="h-full hidden md:flex md:flex-col bg-sidebar border-r shrink-0"
-                animate={{
-                    width: sidebarOpen ? "240px" : "68px",
-                }}
-                onMouseEnter={() => setSidebarOpen(true)}
-                onMouseLeave={() => setSidebarOpen(false)}
+            {/* Desktop sidebar with toggle button */}
+            <div
+                className={cn(
+                    "h-full hidden md:flex md:flex-col bg-sidebar border-r border-sidebar-border transition-all duration-300 ease-in-out",
+                    sidebarOpen ? "w-[240px]" : "w-[68px]"
+                )}
             >
                 <div className="px-4 py-4 flex-1 flex flex-col justify-between gap-10">
                     <div className="flex flex-1 flex-col overflow-x-hidden overflow-y-auto">
-                        {/* Logo */}
-                        {sidebarOpen ? <Logo /> : <LogoIcon />}
+                        {/* Toggle button replacing logo */}
+                        <div className="flex items-center mb-6">
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                onClick={toggleSidebar}
+                                className="h-8 w-8 p-0 text-sidebar-foreground hover:text-sidebar-primary transition-colors"
+                                aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+                                tabIndex={0}
+                            >
+                                <IconMenu2 className="h-5 w-5" />
+                                <span className="sr-only">{sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}</span>
+                            </Button>
+                            {sidebarOpen && <Logo />}
+                        </div>
 
                         {/* Nav links */}
                         <div className="mt-8 flex flex-col gap-2">
@@ -86,7 +102,7 @@ export function DashboardSidebar({ children }: { children: React.ReactNode }) {
                         />
                     </div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Mobile menu overlay */}
             <MobileSidebarContent

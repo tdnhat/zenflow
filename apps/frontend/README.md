@@ -1,36 +1,110 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZenFlow Frontend
 
-## Getting Started
+Modern web application frontend for the ZenFlow workflow automation platform, built with Next.js, React, and Tailwind CSS.
 
-First, run the development server:
+## 📂 Folder Structure
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+src/
+├── app/               # Next.js App Router pages and layouts
+│   ├── api/           # API route handlers
+│   ├── auth/          # Authentication pages (login, register, etc.)
+│   ├── dashboard/     # Dashboard and app features
+│   ├── globals.css    # Global styles
+│   └── layout.tsx     # Root layout with providers
+├── components/        # React components
+│   ├── global/        # Global components (navbar, footer, etc.)
+│   ├── layouts/       # Layout components (dashboard, etc.)
+│   └── ui/            # Reusable UI components (buttons, inputs, etc.)
+├── lib/               # Utility functions and shared code
+│   ├── api/           # API client and services
+│   ├── auth/          # Authentication utilities
+│   └── utils.ts       # General utility functions
+├── models/            # TypeScript interfaces and type definitions
+├── store/             # Global state management (Zustand)
+└── utils/             # Additional utilities
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🧩 Architecture Overview
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The project follows a modular architecture with the following key concepts:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. App Router (Next.js)
 
-## Learn More
+- Based on file-system routing with app directory
+- Each folder represents a route segment
+- Layout components for shared UI across routes
+- Server and client components appropriately used
 
-To learn more about Next.js, take a look at the following resources:
+### 2. Component Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Global Components**: App-wide components like headers and footers
+- **Layout Components**: Structural components for page layouts
+- **UI Components**: Reusable UI elements like buttons, inputs, etc.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 3. Data Flow
 
-## Deploy on Vercel
+- **API Services**: Centralized API interaction via lib/api
+- **Authentication**: NextAuth.js for secure authentication
+- **State Management**: Zustand for global state
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 4. Styling
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Tailwind CSS**: Utility-first CSS framework
+- **Theme Switching**: Dark/light mode with next-themes
+- **Component Variants**: Class variance authority (cva) for component variants
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- Node.js 18.17 or later
+- npm or yarn
+
+### Installation
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+### Build
+
+```bash
+# Create production build
+npm run build
+
+# Start production server
+npm start
+```
+
+## 🛠️ Development Guidelines
+
+### Component Creation
+
+- Create components in the appropriate directory based on their scope
+- Use the "use client" directive for client components
+- Follow the existing component patterns
+
+### API Integration
+
+- Add new API services in `lib/api/` directory
+- Use the existing API client for consistent error handling
+
+### Styling
+
+- Use Tailwind CSS for styling
+- Use the `cn()` utility for conditional class names
+- Follow the existing UI component patterns
+
+### State Management
+
+- Use Zustand stores in the `store/` directory
+- Follow the existing store patterns
+
+## 📜 License
+
+This project is proprietary and confidential. All rights reserved.

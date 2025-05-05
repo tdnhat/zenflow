@@ -3,11 +3,10 @@
 import { useEffect, useState } from "react";
 import { useNextAuth } from "@/lib/auth/useNextAuth";
 import apiClient from "@/lib/api/apiClient";
-import { Button } from "@/components/ui/button";
-import { ModeToggle } from "@/styles/theme/mode-toggle";
+import { DashboardLayout } from "@/components/layouts/dashboard-layout";
 
 export default function Dashboard() {
-    const { isAuthenticated, isLoading, user, login, logout } = useNextAuth();
+    const { isAuthenticated, isLoading, login } = useNextAuth();
     const [apiMessage, setApiMessage] = useState("");
     const [error, setError] = useState("");
 
@@ -46,28 +45,23 @@ export default function Dashboard() {
     }
 
     return (
-        <div className="flex min-h-screen flex-col p-8">
-            <div className="flex justify-between items-center mb-8">
+        <DashboardLayout>
+            <div className="space-y-6">
                 <h1 className="text-2xl font-bold">Dashboard</h1>
-                <div className="flex items-center gap-4">
-                    <span>Welcome, {user?.name || "User"}</span>
-                    <ModeToggle />
-                    <Button onClick={() => logout()}>Logout</Button>
+                
+                <div className="bg-card p-6 rounded-lg shadow">
+                    <h2 className="text-xl font-bold mb-4">
+                        API Response
+                    </h2>
+                    {error ? (
+                        <p className="text-red-500">{error}</p>
+                    ) : apiMessage ? (
+                        <p className="break-words font-mono text-sm">{apiMessage}</p>
+                    ) : (
+                        <p>Loading API data...</p>
+                    )}
                 </div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-md">
-                <h2 className="text-xl font-bold mb-4 text-black">
-                    API Response
-                </h2>
-                {error ? (
-                    <p className="text-red-500">{error}</p>
-                ) : apiMessage ? (
-                    <p className="text-black">{apiMessage}</p>
-                ) : (
-                    <p>Loading API data...</p>
-                )}
-            </div>
-        </div>
+        </DashboardLayout>
     );
 }

@@ -1,86 +1,126 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.DDD.ValueObjects;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.CancelWorkflow
 {
     public class CancelWorkflowHandler : IRequestHandler<CancelWorkflowCommand, CancelWorkflowResult>
     {
-        private readonly IWorkflowExecutionRepository _executionRepository;
         private readonly ILogger<CancelWorkflowHandler> _logger;
+        private readonly IWorkflowExecutionRepository _executionRepository;
+        private readonly IBrowserSessionManager _browserSessionManager;
 
-        public CancelWorkflowHandler(IWorkflowExecutionRepository executionRepository, ILogger<CancelWorkflowHandler> logger)
+        public CancelWorkflowHandler(
+            ILogger<CancelWorkflowHandler> logger,
+            IWorkflowExecutionRepository executionRepository,
+            IBrowserSessionManager browserSessionManager)
         {
-            _executionRepository = executionRepository;
             _logger = logger;
+            _executionRepository = executionRepository;
+            _browserSessionManager = browserSessionManager;
         }
 
         public async Task<CancelWorkflowResult> Handle(CancelWorkflowCommand request, CancellationToken cancellationToken)
         {
-            if (!Guid.TryParse(request.WorkflowId, out var workflowIdGuid))
-            {
-                _logger.LogWarning("Invalid Workflow ID format: {WorkflowId}", request.WorkflowId);
-                return new CancelWorkflowResult { Success = false, Message = "Invalid Workflow ID format." };
-            }
-
             try
             {
-                _logger.LogInformation("Attempting to cancel latest execution for workflow ID {WorkflowId}", workflowIdGuid);
+                _logger.LogInformation("Processing cancellation request for workflow {WorkflowId}, execution {ExecutionId}", 
+                    request.WorkflowId, request.ExecutionId);
 
-                // Find the latest execution for the workflow ID that might be running or pending
-                var executions = await _executionRepository.GetByWorkflowIdAsync(workflowIdGuid, cancellationToken);
-                var latestExecution = executions.FirstOrDefault();
-
-                if (latestExecution == null)
+                // If an execution ID is provided, use that directly
+                if (!string.IsNullOrEmpty(request.ExecutionId) && Guid.TryParse(request.ExecutionId, out var executionId))
                 {
-                    _logger.LogWarning("No executions found for workflow ID {WorkflowId} to cancel.", workflowIdGuid);
-                    return new CancelWorkflowResult { Success = false, Message = $"No executions found for workflow ID {request.WorkflowId}." };
-                }
-
-                // Check if the execution is in a cancellable state
-                if (latestExecution.Status == WorkflowExecutionStatus.RUNNING || latestExecution.Status == WorkflowExecutionStatus.PENDING)
-                {
-                    try
+                    var execution = await _executionRepository.GetByIdAsync(executionId, cancellationToken);
+                    if (execution == null)
                     {
-                        latestExecution.Cancel();
-                        await _executionRepository.UpdateAsync(latestExecution, cancellationToken);
-                        await _executionRepository.SaveChangesAsync(cancellationToken);
-
-                        _logger.LogInformation("Successfully cancelled workflow execution {ExecutionId} for workflow {WorkflowId}", latestExecution.Id, workflowIdGuid);
+                        _logger.LogWarning("Execution with ID {ExecutionId} not found", request.ExecutionId);
                         return new CancelWorkflowResult
                         {
-                            Success = true,
-                            Message = "Workflow execution cancellation requested.",
-                            ExecutionId = latestExecution.Id.ToString(),
-                            Status = latestExecution.Status
+                            Success = false,
+                            Message = $"Execution with ID {request.ExecutionId} not found"
                         };
                     }
-                    catch (InvalidOperationException ex)
+
+                    // Cancel browser sessions associated with this execution
+                    await _browserSessionManager.CloseSessionAsync(execution.Id.ToString(), cancellationToken);
+
+                    // Update execution status
+                    var reason = !string.IsNullOrEmpty(request.Reason) 
+                        ? request.Reason 
+                        : "Canceled by user request";
+                        
+                    execution.Cancel(reason);
+                    await _executionRepository.UpdateAsync(execution, cancellationToken);
+                    await _executionRepository.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation("Successfully canceled execution {ExecutionId}", execution.Id);
+                    return new CancelWorkflowResult
                     {
-                        _logger.LogWarning("Cannot cancel workflow execution {ExecutionId} in status {Status}: {Message}", latestExecution.Id, latestExecution.Status, ex.Message);
-                        return new CancelWorkflowResult { Success = false, Message = ex.Message, ExecutionId = latestExecution.Id.ToString(), Status = latestExecution.Status };
+                        Success = true,
+                        Message = "Workflow execution canceled successfully",
+                        ExecutionId = execution.Id.ToString(),
+                        Status = execution.Status.ToString()
+                    };
+                }
+                // Otherwise, look up by workflow ID
+                else if (!string.IsNullOrEmpty(request.WorkflowId) && Guid.TryParse(request.WorkflowId, out var workflowId))
+                {
+                    // Get the most recent active execution for this workflow
+                    var execution = await _executionRepository.GetMostRecentActiveExecutionForWorkflowAsync(workflowId, cancellationToken);
+                    if (execution == null)
+                    {
+                        _logger.LogWarning("No active executions found for workflow {WorkflowId}", request.WorkflowId);
+                        return new CancelWorkflowResult
+                        {
+                            Success = false,
+                            Message = $"No active executions found for workflow {request.WorkflowId}"
+                        };
                     }
+
+                    // Cancel browser sessions associated with this execution
+                    await _browserSessionManager.CloseSessionAsync(execution.Id.ToString(), cancellationToken);
+
+                    // Update execution status
+                    var reason = !string.IsNullOrEmpty(request.Reason) 
+                        ? request.Reason 
+                        : "Canceled by user request";
+                        
+                    execution.Cancel(reason);
+                    await _executionRepository.UpdateAsync(execution, cancellationToken);
+                    await _executionRepository.SaveChangesAsync(cancellationToken);
+
+                    _logger.LogInformation("Successfully canceled execution {ExecutionId} for workflow {WorkflowId}",
+                        execution.Id, request.WorkflowId);
+                    return new CancelWorkflowResult
+                    {
+                        Success = true,
+                        Message = "Workflow execution canceled successfully",
+                        ExecutionId = execution.Id.ToString(),
+                        Status = execution.Status.ToString()
+                    };
                 }
                 else
                 {
-                    _logger.LogInformation("Workflow execution {ExecutionId} is already in a terminal state ({Status}) and cannot be cancelled.", latestExecution.Id, latestExecution.Status);
+                    _logger.LogWarning("Invalid request: Either WorkflowId or ExecutionId must be provided");
                     return new CancelWorkflowResult
                     {
-                        Success = false, // Or true, depending on whether attempting to cancel a finished workflow is an "error"
-                        Message = $"Workflow execution is already in status '{latestExecution.Status}' and cannot be cancelled.",
-                        ExecutionId = latestExecution.Id.ToString(),
-                        Status = latestExecution.Status
+                        Success = false,
+                        Message = "Either WorkflowId or ExecutionId must be provided"
                     };
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error cancelling workflow execution for workflow ID {WorkflowId}: {ErrorMessage}", workflowIdGuid, ex.Message);
+                _logger.LogError(ex, "Error canceling workflow {WorkflowId}, execution {ExecutionId}: {ErrorMessage}",
+                    request.WorkflowId, request.ExecutionId, ex.Message);
+
                 return new CancelWorkflowResult
                 {
                     Success = false,
-                    Message = $"An error occurred while cancelling the workflow execution: {ex.Message}"
+                    Message = $"Error canceling workflow execution: {ex.Message}"
                 };
             }
         }

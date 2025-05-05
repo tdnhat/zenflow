@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Modules.Workflow.Services.BrowserAutomation;
 using Modules.Workflow.Services.BrowserAutomation.Activities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
 
 namespace Modules.Workflow.Infrastructure.Extensions
 {
@@ -14,6 +15,7 @@ namespace Modules.Workflow.Infrastructure.Extensions
             services.AddSingleton<IBrowserAutomation, BrowserAutomation>();
             services.AddSingleton<IBrowserSessionManager, BrowserSessionManager>();
             services.AddScoped<IWorkflowLifecycleHandler, WorkflowCleanupHandler>();
+            services.AddScoped<IActivityMapperFactory, ActivityMapperFactory>();
 
             // Add Elsa services
             services.AddElsa(elsa =>

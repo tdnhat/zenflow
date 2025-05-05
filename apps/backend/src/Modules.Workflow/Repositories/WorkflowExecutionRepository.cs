@@ -93,6 +93,16 @@ namespace Modules.Workflow.Repositories
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task<DDD.Entities.WorkflowExecution?> GetMostRecentActiveExecutionForWorkflowAsync(Guid workflowId, CancellationToken cancellationToken = default)
+        {
+            return await _dbContext.WorkflowExecutions
+                .Where(e => e.WorkflowId == workflowId && 
+                          (e.Status == DDD.ValueObjects.WorkflowExecutionStatus.RUNNING || 
+                           e.Status == DDD.ValueObjects.WorkflowExecutionStatus.PENDING))
+                .OrderByDescending(e => e.StartedAt)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         private List<IDomainEvent> CollectDomainEvents()
         {
             // Get all entities with domain events

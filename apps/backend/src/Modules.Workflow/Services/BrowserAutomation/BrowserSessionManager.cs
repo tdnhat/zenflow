@@ -96,5 +96,17 @@ namespace Modules.Workflow.Services.BrowserAutomation
                 _semaphore.Release();
             }
         }
+
+        /// <summary>
+        /// Closes the browser session for a workflow
+        /// </summary>
+        /// <param name="workflowInstanceId">The ID of the workflow instance</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        public async Task CloseSessionAsync(string workflowInstanceId, CancellationToken cancellationToken = default)
+        {
+            // We'll reuse the existing cleanup method
+            _logger.LogInformation("Closing browser session for workflow {WorkflowInstanceId}", workflowInstanceId);
+            await CleanupWorkflowResourcesAsync(workflowInstanceId);
+        }
     }
 }

@@ -11,9 +11,11 @@ namespace Modules.Workflow.Endpoints.WorkflowExecutions
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            app.MapPost("/api/workflows/{id}/cancel", async (string id, ISender sender) =>
+            app.MapPost("/api/workflows/{id}/cancel", async (string id, CancelWorkflowCommand command, ISender sender) =>
             {
-                var command = new CancelWorkflowCommand(id);
+                // Set the workflow ID from the route parameter
+                command = command with { WorkflowId = id };
+
                 var result = await sender.Send(command);
 
                 if (!result.Success)
@@ -25,7 +27,7 @@ namespace Modules.Workflow.Endpoints.WorkflowExecutions
 
                 return Results.Ok(result);
             })
-            // .RequireAuthorization() // Add authorization as needed
+            // .RequireAuthorization() // Commented out for testing purposes
             .WithTags("Workflows")
             .WithName("Workflows_CancelWorkflow")
             .Produces<CancelWorkflowResult>(StatusCodes.Status200OK)

@@ -66,9 +66,19 @@ namespace Modules.Workflow.Repositories
 
         public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
         {
-            // Dispatch domain events before saving changes
-            await DispatchDomainEventsAsync();
-            
+            // Collect domain events before saving
+            var domainEvents = CollectDomainEvents();
+
+            // Process domain events - this will add them to the DbContext but not save yet
+            if (domainEvents.Any())
+            {
+                foreach (var domainEvent in domainEvents)
+                {
+                    await _domainEventService.PublishAsync(domainEvent);
+                }
+            }
+
+            // Now save everything in a single transaction
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
@@ -79,8 +89,8 @@ namespace Modules.Workflow.Repositories
                 .Where(w => w.CreatedBy == userId)
                 .ToListAsync(cancellationToken);
         }
-        
-        private async Task DispatchDomainEventsAsync()
+
+        private List<IDomainEvent> CollectDomainEvents()
         {
             // Get all entities with domain events
             var entitiesWithEvents = _dbContext.ChangeTracker.Entries<Aggregate<Guid>>()
@@ -96,11 +106,7 @@ namespace Modules.Workflow.Repositories
             // Clear domain events from entities
             entitiesWithEvents.ForEach(e => e.ClearDomainEvents());
 
-            // Dispatch domain events
-            foreach (var domainEvent in domainEvents)
-            {
-                await _domainEventService.PublishAsync(domainEvent);
-            }
+            return domainEvents;
         }
     }
 }

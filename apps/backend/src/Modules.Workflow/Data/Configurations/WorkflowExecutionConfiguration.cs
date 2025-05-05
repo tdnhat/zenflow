@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Modules.Workflow.DDD.Entities;
+using Modules.Workflow.DDD.ValueObjects;
 
 namespace Modules.Workflow.Data.Configurations
 {
@@ -17,10 +19,14 @@ namespace Modules.Workflow.Data.Configurations
                 
             builder.Property(e => e.WorkflowVersion)
                 .IsRequired();
-                
+            
+            // Configure Status enum to be stored as a string in the database    
             builder.Property(e => e.Status)
                 .IsRequired()
-                .HasMaxLength(20);
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => v.ToStringValue(),
+                    v => WorkflowExecutionStatusExtensions.FromString(v));
                 
             builder.Property(e => e.StartedAt)
                 .IsRequired();

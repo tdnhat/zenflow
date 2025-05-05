@@ -63,16 +63,16 @@ jobs:
         dotnet-version: '8.0.x'
 
     - name: ⚡ Restore .NET dependencies
-      run: dotnet restore
+      run: dotnet restore zenflow.sln
 
     - name: 🔍 Check code format
       run: dotnet format --verify-no-changes --verbosity diagnostic || true  # Don't fail the build yet during Stage 1
 
     - name: 🛠️ Build Backend
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build zenflow.sln --configuration Release --no-restore
       
     - name: 🧪 Run Backend Tests
-      run: dotnet test --no-restore --verbosity normal
+      run: dotnet test zenflow.sln --no-restore --verbosity normal
 
   integration:
     name: 🔄 Integration Check

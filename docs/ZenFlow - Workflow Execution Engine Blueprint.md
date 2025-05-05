@@ -814,7 +814,7 @@ public class WorkflowsController : ControllerBase
         return Ok(new WorkflowExecutionResponse
         {
             WorkflowInstanceId = result.WorkflowInstance.Id,
-            Status = result.WorkflowInstance.Status.ToString(),
+            Status = result.WorkflowInstance.Status.ToStringValue(),
             Completed = result.WorkflowInstance.Status == WorkflowStatus.Finished
         });
     }

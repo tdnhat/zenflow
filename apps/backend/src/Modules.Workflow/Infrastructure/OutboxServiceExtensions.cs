@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Infrastructure.Events;
 using Modules.Workflow.Infrastructure.Outbox;
 

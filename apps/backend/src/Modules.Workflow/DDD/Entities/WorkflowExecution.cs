@@ -98,7 +98,7 @@ namespace Modules.Workflow.DDD.Entities
             OutputData = outputData;
         }
 
-        public void Cancel()
+        public void Cancel(string? reason = null)
         {
             if (Status == WorkflowExecutionStatus.COMPLETED || Status == WorkflowExecutionStatus.FAILED)
             {
@@ -107,6 +107,7 @@ namespace Modules.Workflow.DDD.Entities
 
             Status = WorkflowExecutionStatus.CANCELLED;
             CompletedAt = DateTime.UtcNow;
+            ErrorMessage = reason ?? "Cancelled by user";
             
             // Cancel all running node executions
             var runningNodes = NodeExecutions.Where(n => n.Status == NodeExecutionStatus.RUNNING).ToList();

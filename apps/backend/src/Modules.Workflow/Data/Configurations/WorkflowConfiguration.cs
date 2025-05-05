@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Modules.Workflow.DDD.ValueObjects;
 
 namespace Modules.Workflow.Data.Configurations
 {
@@ -19,8 +21,13 @@ namespace Modules.Workflow.Data.Configurations
                 .IsRequired()
                 .HasMaxLength(255);
 
+            // Configure Status enum to be stored as a string in the database
             builder.Property(w => w.Status)
-                .IsRequired();
+                .IsRequired()
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => v.ToStringValue(),
+                    v => WorkflowStatusExtensions.FromString(v));
 
             builder.Ignore(w => w.DomainEvents); // Ignore domain events
         }

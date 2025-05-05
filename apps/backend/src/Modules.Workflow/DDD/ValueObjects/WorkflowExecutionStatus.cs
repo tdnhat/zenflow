@@ -40,7 +40,7 @@ namespace Modules.Workflow.DDD.ValueObjects
                 COMPLETED_STRING => WorkflowExecutionStatus.COMPLETED,
                 FAILED_STRING => WorkflowExecutionStatus.FAILED,
                 CANCELLED_STRING => WorkflowExecutionStatus.CANCELLED,
-                _ => throw new ArgumentOutOfRangeException(nameof(status), status, null)
+                _ => WorkflowExecutionStatus.PENDING
             };
         }
     }

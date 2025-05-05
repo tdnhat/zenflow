@@ -12,5 +12,13 @@ namespace Modules.Workflow.DDD.Interfaces
     {
         Task<List<Entities.WorkflowExecution>> GetByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default);
         Task<int> CountByWorkflowIdAsync(Guid workflowId, CancellationToken cancellationToken = default);
+        
+        /// <summary>
+        /// Gets the most recent active execution (running or pending) for a workflow
+        /// </summary>
+        /// <param name="workflowId">The workflow ID</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The most recent active execution, or null if none exists</returns>
+        Task<Entities.WorkflowExecution?> GetMostRecentActiveExecutionForWorkflowAsync(Guid workflowId, CancellationToken cancellationToken = default);
     }
 }

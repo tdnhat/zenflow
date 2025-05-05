@@ -12,14 +12,13 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             apiClient
-                .post("/workflows/2da8c4ae-aeec-42e0-9c91-7f9e7bc4b895/run", {
-                })
+                .post("/workflows/2a3e98bd-4ac3-4e43-b127-6cc21a74152c/run", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })
                 .catch((err) => {
                     console.error("API Error:", err);
-                    setError("Failed to restore workflow data");
+                    setError("Failed to validate workflow data");
                 });
         }
     }, [isLoading, isAuthenticated]);

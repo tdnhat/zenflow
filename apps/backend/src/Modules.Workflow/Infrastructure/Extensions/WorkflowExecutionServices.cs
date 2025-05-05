@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Modules.Workflow.Services.BrowserAutomation;
 using Modules.Workflow.Services.BrowserAutomation.Activities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
 
 namespace Modules.Workflow.Infrastructure.Extensions
 {
@@ -14,6 +15,11 @@ namespace Modules.Workflow.Infrastructure.Extensions
             services.AddSingleton<IBrowserAutomation, BrowserAutomation>();
             services.AddSingleton<IBrowserSessionManager, BrowserSessionManager>();
             services.AddScoped<IWorkflowLifecycleHandler, WorkflowCleanupHandler>();
+            
+            // Register activity mappers
+            services.AddScoped<IActivityMapperFactory, ActivityMapperFactory>();
+            services.AddScoped<IActivityMapper, BrowserActivityMapper>();
+            services.AddScoped<IActivityMapper, DefaultActivityMapper>();
 
             // Add Elsa services
             services.AddElsa(elsa =>
@@ -29,8 +35,9 @@ namespace Modules.Workflow.Infrastructure.Extensions
                    .AddActivity<ClickActivity>()
                    .AddActivity<InputTextActivity>()
                    .AddActivity<WaitForSelectorActivity>()
-                   .AddActivity<ExtractDataActivity>()
-                   .AddActivity<ScreenshotActivity>();
+                   .AddActivity<CrawlDataActivity>()
+                   .AddActivity<ScreenshotActivity>()
+                   .AddActivity<ManualTriggerActivity>();
 
             });
 

@@ -18,7 +18,7 @@ export const FlowToolbar = ({
         console.log("Saving flow");
     };
     return (
-        <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between">
+        <div className="h-16 p-4 border-b flex items-center justify-between">
             <div>
                 <h2 className="text-xl font-semibold">
                     {name || "Untitled Workflow"}

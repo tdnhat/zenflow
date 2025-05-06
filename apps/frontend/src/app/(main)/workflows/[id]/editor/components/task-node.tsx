@@ -12,7 +12,7 @@ export default function TaskNode({ title, description, type }: NodeTypeTaskDto) 
 
     return (
         <div
-            className="border border-border rounded-md p-3 cursor-grab bg-background hover:border-primary/50 transition-colors"
+            className="bg-card border border-border shadow rounded-md p-3 cursor-grab hover:border-primary/50 transition-colors"
             onDragStart={onDragStart}
             draggable
         >

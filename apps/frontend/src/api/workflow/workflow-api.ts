@@ -25,7 +25,15 @@ export const createWorkflow = async (
     return response.data;
 };
 
-export const getNodeTypes = async (): Promise<NodeTypeDto[]> => {
+export const fetchNodeTypes = async (): Promise<NodeTypeDto[]> => {
     const response = await api.get("/node-types");
+    return response.data;
+};
+
+export const saveWorkflow = async (
+    id: string,
+    data: WorkflowFormValues
+): Promise<WorkflowDto> => {
+    const response = await api.post(`${WORKFLOWS_ENDPOINT}/${id}/save`, data);
     return response.data;
 };

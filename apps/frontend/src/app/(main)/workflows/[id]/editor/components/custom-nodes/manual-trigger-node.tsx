@@ -12,9 +12,9 @@ export const ManualTriggerNode = memo(({ data }: NodeProps) => {
 
     return (
         <>
-            <div className="p-4 rounded-md border-2 border-primary bg-white dark:bg-background shadow-md min-w-[200px]">
+            <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[200px]">
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium text-sm text-primary">
+                    <div className="font-medium text-sm text-indigo-500">
                         Manual Trigger
                     </div>
                     {nodeData.description && (
@@ -28,7 +28,7 @@ export const ManualTriggerNode = memo(({ data }: NodeProps) => {
                 type="source"
                 position={Position.Bottom}
                 id="output"
-                className="w-3 h-3 bg-primary border-2 border-white dark:border-gray-800"
+                className="w-3 h-3 bg-indigo-500 border-2 border-white dark:border-gray-800"
             />
         </>
     );

@@ -10,21 +10,34 @@ namespace Modules.Workflow.Endpoints.Workflows
     {
         public void AddRoutes(IEndpointRouteBuilder app)
         {
-            // Get all node types
+            // Get all node types in a format matching the frontend task-library
             app.MapGet("/api/node-types", (INodeTypeRegistry nodeTypeRegistry) =>
             {
-                var nodeTypes = nodeTypeRegistry.GetAllNodeTypes();
                 var categories = nodeTypeRegistry.GetCategories();
+                var result = new List<object>();
 
-                return Results.Ok(new
+                foreach (var category in categories)
                 {
-                    nodeTypes,
-                    categories
-                });
+                    var tasksInCategory = nodeTypeRegistry.GetNodeTypesByCategory(category)
+                        .Select(nodeType => new
+                        {
+                            title = nodeType.Label,
+                            description = nodeType.Description,
+                            type = nodeType.Type
+                        });
+
+                    result.Add(new
+                    {
+                        name = category,
+                        tasks = tasksInCategory
+                    });
+                }
+
+                return Results.Ok(result);
             })
             .WithTags("Node Types")
             .WithName("NodeTypes_GetAll")
-            .Produces<object>(StatusCodes.Status200OK);
+            .Produces<List<object>>(StatusCodes.Status200OK);
 
             // Get node types by category
             app.MapGet("/api/node-types/categories/{category}", (string category, INodeTypeRegistry nodeTypeRegistry) =>

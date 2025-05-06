@@ -3,60 +3,7 @@
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TaskNode from "./task-node";
-
-// Task definitions - these could come from an API
-const TASK_CATEGORIES = [
-    {
-        name: "Triggers",
-        tasks: [
-            {
-                title: "Webhook",
-                description: "Trigger on HTTP request",
-                type: "webhook-trigger",
-            },
-            {
-                title: "Schedule",
-                description: "Run at scheduled times",
-                type: "schedule-trigger",
-            },
-        ],
-    },
-    {
-        name: "Actions",
-        tasks: [
-            {
-                title: "HTTP Request",
-                description: "Make HTTP requests",
-                type: "http-action",
-            },
-            {
-                title: "Database Query",
-                description: "Execute database operations",
-                type: "database-action",
-            },
-            {
-                title: "Email",
-                description: "Send email notifications",
-                type: "email-action",
-            },
-        ],
-    },
-    {
-        name: "Conditions",
-        tasks: [
-            {
-                title: "If/Else",
-                description: "Branch based on conditions",
-                type: "if-condition",
-            },
-            {
-                title: "Switch",
-                description: "Multiple branching",
-                type: "switch-condition",
-            },
-        ],
-    },
-];
+import { useNodeTypes } from "../../../_hooks/use-workflows";
 
 interface TaskLibraryProps {
     onClose: () => void;
@@ -64,7 +11,11 @@ interface TaskLibraryProps {
 }
 
 export default function TaskLibrary({ onClose, isOpen }: TaskLibraryProps) {
+    const { data: nodeTypes, isLoading, error } = useNodeTypes();
     if (!isOpen) return null;
+
+    if (isLoading) return <div>Loading...</div>;
+    if (error) return <div>Error: {error.message}</div>;
 
     return (
         <div className="flex flex-col h-full">
@@ -82,7 +33,7 @@ export default function TaskLibrary({ onClose, isOpen }: TaskLibraryProps) {
 
             <div className="p-4 overflow-y-auto flex-1">
                 <div className="space-y-6">
-                    {TASK_CATEGORIES.map((category) => (
+                    {nodeTypes?.map((category) => (
                         <div key={category.name} className="space-y-3">
                             <div className="text-sm font-medium text-muted-foreground">
                                 {category.name}

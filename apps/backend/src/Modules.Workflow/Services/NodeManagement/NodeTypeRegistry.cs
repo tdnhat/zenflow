@@ -16,126 +16,111 @@ namespace Modules.Workflow.Services.NodeManagement
 
         public NodeTypeRegistry()
         {
-            // Register built-in node types
-            RegisterCoreNodeTypes();
+            // Register node types based on actual implemented activities
+            RegisterImplementedNodeTypes();
         }
 
-        private void RegisterCoreNodeTypes()
+        private void RegisterImplementedNodeTypes()
         {
             // TRIGGER NODES
             RegisterNodeType(new NodeTypeDto(
-                "webhook",
-                "Webhook Trigger",
+                "manual-trigger",
+                "Manual Trigger",
                 "Triggers",
                 "TRIGGER",
-                "Start workflow when a webhook URL is called",
+                "Manually trigger the workflow",
+                "👆",
+                new List<NodePropertyDto>
+                {
+                    new NodePropertyDto("name", "Trigger Name", "text", "Manual Start", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("description", "Description", "text", "Start workflow manually", false, new List<OptionValueDto>())
+                }
+            ));
+
+            // BROWSER AUTOMATION NODES
+            RegisterNodeType(new NodeTypeDto(
+                "navigate",
+                "Navigate",
+                "Browser Automation",
+                "ACTION",
+                "Navigate to a URL",
                 "🌐",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("path", "Path", "text", "", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("method", "HTTP Method", "select", "POST", true,
-                        new List<OptionValueDto> {
-                            new OptionValueDto("GET", "GET"),
-                            new OptionValueDto("POST", "POST"),
-                            new OptionValueDto("PUT", "PUT"),
-                            new OptionValueDto("DELETE", "DELETE")
-                        })
+                    new NodePropertyDto("url", "URL", "text", "https://example.com", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("timeout", "Timeout (ms)", "number", 30000, false, new List<OptionValueDto>())
                 }
             ));
 
             RegisterNodeType(new NodeTypeDto(
-                "timer",
-                "Timer Trigger",
-                "Triggers",
-                "TRIGGER",
-                "Start workflow at specified intervals",
-                "⏰",
-                new List<NodePropertyDto>
-                {
-                    new NodePropertyDto("schedule", "Schedule (CRON)", "text", "0 * * * *", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("timezone", "Timezone", "text", "UTC", false, new List<OptionValueDto>())
-                }
-            ));
-
-            // ACTION NODES
-            RegisterNodeType(new NodeTypeDto(
-                "http",
-                "HTTP Request",
-                "Actions",
+                "click",
+                "Click Element",
+                "Browser Automation",
                 "ACTION",
-                "Make HTTP requests to external APIs",
-                "🔗",
+                "Click on an element in the page",
+                "🖱️",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("url", "URL", "text", "", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("method", "Method", "select", "GET", true,
-                        new List<OptionValueDto> {
-                            new OptionValueDto("GET", "GET"),
-                            new OptionValueDto("POST", "POST"),
-                            new OptionValueDto("PUT", "PUT"),
-                            new OptionValueDto("DELETE", "DELETE"),
-                            new OptionValueDto("PATCH", "PATCH")
-                        }),
-                    new NodePropertyDto("headers", "Headers", "json", "{}", false, new List<OptionValueDto>()),
-                    new NodePropertyDto("body", "Body", "json", "{}", false, new List<OptionValueDto>())
+                    new NodePropertyDto("selector", "CSS Selector", "text", "", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("timeout", "Timeout (ms)", "number", 5000, false, new List<OptionValueDto>())
                 }
             ));
 
             RegisterNodeType(new NodeTypeDto(
-                "transform",
-                "Transform Data",
-                "Actions",
+                "input-text",
+                "Input Text",
+                "Browser Automation",
                 "ACTION",
-                "Transform data using JavaScript expressions",
-                "🔄",
+                "Enter text into a form field",
+                "⌨️",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("script", "JavaScript", "code", "// Example: \nreturn { \n  result: input.value * 2 \n};", true, new List<OptionValueDto>())
+                    new NodePropertyDto("selector", "CSS Selector", "text", "", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("text", "Text", "text", "", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("clear", "Clear Field First", "boolean", true, false, new List<OptionValueDto>())
                 }
             ));
 
-            // CONDITION NODES
             RegisterNodeType(new NodeTypeDto(
-                "condition",
-                "Condition",
-                "Control Flow",
-                "CONDITION",
-                "Branch workflow based on conditions",
-                "🔀",
+                "wait-for-selector",
+                "Wait For Element",
+                "Browser Automation",
+                "ACTION",
+                "Wait for an element to appear in the page",
+                "⏳",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("condition", "JavaScript Condition", "code", "// Example: \nreturn input.value > 10;", true, new List<OptionValueDto>())
+                    new NodePropertyDto("selector", "CSS Selector", "text", "", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("timeout", "Timeout (ms)", "number", 30000, false, new List<OptionValueDto>()),
+                    new NodePropertyDto("visible", "Wait Until Visible", "boolean", true, false, new List<OptionValueDto>())
                 }
             ));
 
-            // LOOP NODES
             RegisterNodeType(new NodeTypeDto(
-                "foreach",
-                "For Each",
-                "Control Flow",
-                "LOOP",
-                "Loop through items in an array",
-                "🔄",
+                "screenshot",
+                "Take Screenshot",
+                "Browser Automation",
+                "ACTION",
+                "Capture a screenshot of the current page",
+                "📷",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("items", "Items Path", "text", "items", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("maxIterations", "Max Iterations", "number", 100, false, new List<OptionValueDto>())
+                    new NodePropertyDto("filename", "Filename", "text", "screenshot", false, new List<OptionValueDto>()),
+                    new NodePropertyDto("fullPage", "Full Page", "boolean", false, false, new List<OptionValueDto>())
                 }
             ));
 
-            // CONNECTOR NODES
             RegisterNodeType(new NodeTypeDto(
-                "database",
-                "Database",
-                "Connectors",
-                "CONNECTOR",
-                "Connect to a database",
-                "🗄️",
+                "crawl-data",
+                "Crawl Data",
+                "Browser Automation",
+                "ACTION",
+                "Extract data from web page elements",
+                "🕸️",
                 new List<NodePropertyDto>
                 {
-                    new NodePropertyDto("connectionString", "Connection String", "text", "", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("query", "SQL Query", "code", "SELECT * FROM table", true, new List<OptionValueDto>()),
-                    new NodePropertyDto("parameters", "Parameters", "json", "{}", false, new List<OptionValueDto>())
+                    new NodePropertyDto("selector", "Root Selector", "text", "", true, new List<OptionValueDto>()),
+                    new NodePropertyDto("fields", "Fields to Extract", "json", "[\n  {\n    \"name\": \"title\",\n    \"selector\": \"h1\",\n    \"attribute\": \"innerText\"\n  }\n]", true, new List<OptionValueDto>())
                 }
             ));
         }

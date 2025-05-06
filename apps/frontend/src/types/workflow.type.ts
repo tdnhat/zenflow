@@ -42,6 +42,17 @@ export interface WorkflowDetailDto {
     edges: WorkflowEdgeDto[];
 }
 
+export interface NodeTypeTaskDto {
+    title: string;
+    description: string;
+    type: string;
+}
+
+export interface NodeTypeDto {
+    name: string;
+    tasks: NodeTypeTaskDto[];
+}
+
 // Request/Response types for API calls
 export interface CreateWorkflowRequest {
     name: string;

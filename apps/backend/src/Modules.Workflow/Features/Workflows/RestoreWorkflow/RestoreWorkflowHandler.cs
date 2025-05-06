@@ -49,7 +49,7 @@ namespace Modules.Workflow.Features.Workflows.RestoreWorkflow
 
             _logger.LogInformation("Restored workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue());
+            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue(), workflow.CreatedAt, workflow.LastModifiedAt);
         }
     }
 }

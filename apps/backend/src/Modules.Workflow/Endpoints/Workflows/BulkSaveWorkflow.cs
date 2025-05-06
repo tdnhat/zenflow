@@ -24,6 +24,21 @@ namespace Modules.Workflow.Endpoints.Workflows
             .Produces(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status500InternalServerError);
+
+            app.MapPost("/api/workflows/{id}/save", async (Guid id, BulkSaveWorkflowCommand command, ISender sender) =>
+            {
+                var commandWithId = command with { Id = id };
+                var result = await sender.Send(commandWithId);
+                return result is not null ? Results.Ok(result) : Results.NotFound();
+            })
+            .RequireAuthorization()
+            .WithTags("Workflows")
+            .WithName("Workflows_SaveExistingWorkflow")
+            .Produces<WorkflowDetailDto>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status400BadRequest)
+            .Produces(StatusCodes.Status401Unauthorized)
+            .Produces(StatusCodes.Status500InternalServerError);
         }
     }
 }

@@ -1,0 +1,50 @@
+import { Button } from "@/components/ui/button";
+import { PanelRightClose, PanelRightOpen, Play, Save } from "lucide-react";
+
+interface FlowToolbarProps {
+    name: string;
+    onRun: () => void;
+    sidebarOpen: boolean;
+    setSidebarOpen: (open: boolean) => void;
+}
+
+export const FlowToolbar = ({
+    name,
+    onRun,
+    sidebarOpen,
+    setSidebarOpen,
+}: FlowToolbarProps) => {
+    const handleSave = () => {
+        console.log("Saving flow");
+    };
+    return (
+        <div className="bg-card border-b border-border px-4 py-2 flex items-center justify-between">
+            <div>
+                <h2 className="text-xl font-semibold">
+                    {name || "Untitled Workflow"}
+                </h2>
+            </div>
+            {/* Sidebar toggle button */}
+            <div className="flex items-center gap-2">
+                <Button
+                    variant="outline" size="sm"
+                    onClick={() => setSidebarOpen(!sidebarOpen)}
+                >
+                    {sidebarOpen ? (
+                        <PanelRightClose className="h-4 w-4" />
+                    ) : (
+                        <PanelRightOpen className="h-4 w-4" />
+                    )}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleSave}>
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Flow
+                </Button>
+                <Button size="sm" onClick={onRun}>
+                    <Play className="h-4 w-4 mr-2" />
+                    Run
+                </Button>
+            </div>
+        </div>
+    );
+};

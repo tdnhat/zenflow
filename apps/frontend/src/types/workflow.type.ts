@@ -6,6 +6,8 @@ export interface WorkflowDto {
     name: string;
     description: string;
     status: WorkflowStatus;
+    createdAt: Date;
+    lastModifiedAt: Date;
 }
 
 export interface WorkflowNodeDto {
@@ -34,8 +36,21 @@ export interface WorkflowDetailDto {
     name: string;
     description: string;
     status: WorkflowStatus;
+    createdAt: Date;
+    lastModifiedAt: Date;
     nodes: WorkflowNodeDto[];
     edges: WorkflowEdgeDto[];
+}
+
+export interface NodeTypeTaskDto {
+    title: string;
+    description: string;
+    type: string;
+}
+
+export interface NodeTypeDto {
+    name: string;
+    tasks: NodeTypeTaskDto[];
 }
 
 // Request/Response types for API calls

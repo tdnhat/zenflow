@@ -35,7 +35,13 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
 
             // Map entity results to DTOs
             var workflowDtos = workflows.Select(w =>
-                new WorkflowDto(w.Id, w.Name, w.Description, w.Status.ToStringValue())).ToList();
+                new WorkflowDto(
+                    w.Id, 
+                    w.Name,
+                    w.Description,
+                    w.Status.ToStringValue(),
+                    w.CreatedAt,
+                    w.LastModifiedAt)).ToList();
 
             _logger.LogInformation("Retrieved {Count} workflows for user {UserId} (Total: {Total})",
                 workflowDtos.Count, userId, workflows.Count);

@@ -16,7 +16,7 @@ export default function TaskLibrary({ isOpen }: TaskLibraryProps) {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="p-4 border-b border-border flex justify-between items-center">
+            <div className="h-16 p-4 border-b flex justify-between items-center">
                 <h3 className="font-medium">Task Library</h3>
             </div>
 

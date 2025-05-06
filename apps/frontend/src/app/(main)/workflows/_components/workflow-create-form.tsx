@@ -15,7 +15,7 @@ import {
     workflowFormSchema,
     WorkflowFormValues,
 } from "../_schemas/workflow.schemas";
-import { useCreateWorkflow } from "../_hooks/use-workflows";
+import { useCreateWorkflow } from "../_hooks/use-workflow";
 import { useEffect } from "react";
 
 // Default values for the form

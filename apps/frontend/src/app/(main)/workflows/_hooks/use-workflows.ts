@@ -1,11 +1,8 @@
-import {
-    createWorkflow,
-    fetchWorkflows,
-    getNodeTypes,
-} from "@/api/workflow/workflow-api";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { WorkflowFormValues } from "../_schemas/workflow.schemas";
-import { toast } from "react-hot-toast";
+import { fetchNodeTypes, fetchWorkflows, saveWorkflow } from "@/api/workflow/workflow-api";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Node, Edge } from "@xyflow/react";
+import toast from "react-hot-toast";
+import { useWorkflowStore } from "@/store/workflow.store";
 
 export const workflowKeys = {
     all: ["workflows"] as const,
@@ -15,8 +12,11 @@ export const workflowKeys = {
         [...workflowKeys.lists(), { filters }] as const,
     details: () => [...workflowKeys.all, "detail"] as const,
     detail: (id: string) => [...workflowKeys.details(), id] as const,
+    saves: () => [...workflowKeys.all, "save"] as const,
+    save: (id: string) => [...workflowKeys.saves(), id] as const,
 };
 
+// Fetch all workflows
 export const useWorkflows = () => {
     return useQuery({
         queryKey: workflowKeys.lists(),
@@ -24,43 +24,55 @@ export const useWorkflows = () => {
     });
 };
 
+// Fetch node types
 export const useNodeTypes = () => {
     return useQuery({
         queryKey: workflowKeys.nodeTypes(),
-        queryFn: () => getNodeTypes(),
+        queryFn: () => fetchNodeTypes(),
     });
 };
-export const useCreateWorkflow = () => {
+
+// Hook for saving workflow
+export const useSaveWorkflow = (workflowId: string) => {
     const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (data: WorkflowFormValues) => {
-            const promise = createWorkflow(data);
-
-            toast.promise(
-                promise,
-                {
-                    loading: "Creating workflow...",
-                    success: "Workflow created successfully!",
-                    error: "Failed to create workflow",
-                },
-                {
-                    style: {
-                        borderRadius: "10px",
-                        background: "var(--background)",
-                        color: "var(--foreground)",
-                        border: "1px solid var(--border)",
-                    },
-                    iconTheme: {
-                        primary: "var(--primary)",
-                        secondary: "var(--primary-foreground)",
-                    },
-                }
-            );
-
-            return promise;
+    const { setSaving, isSaving } = useWorkflowStore();
+    
+    // Use react-query's useMutation for better handling of async operations
+    const mutation = useMutation({
+        mutationFn: ({ nodes, edges }: { nodes: Node[], edges: Edge[] }) => 
+            saveWorkflow(workflowId, nodes, edges),
+        onMutate: () => {
+            setSaving(true);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: workflowKeys.lists() });
+            toast.success("Workflow saved successfully!");
+            // Invalidate relevant queries to refresh data
+            queryClient.invalidateQueries({
+                queryKey: workflowKeys.detail(workflowId),
+            });
         },
+        onError: (error) => {
+            console.error("Error saving workflow:", error);
+            toast.error("Failed to save workflow. Please try again.");
+        },
+        onSettled: () => {
+            setSaving(false);
+        }
     });
+
+    const saveWorkflowData = async (nodes: Node[], edges: Edge[]) => {
+        if (!workflowId) {
+            toast.error("Workflow ID is missing.");
+            return;
+        }
+        
+        mutation.mutate({ nodes, edges });
+    };
+
+    return {
+        saveWorkflowData,
+        isSaving,
+        isError: mutation.isError,
+        error: mutation.error
+    };
 };

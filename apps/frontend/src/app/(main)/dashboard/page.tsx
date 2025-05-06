@@ -13,7 +13,7 @@ export default function Dashboard() {
     useEffect(() => {
         if (!isLoading && isAuthenticated) {
             api
-                .post("/workflows/2a3e98bd-4ac3-4e43-b127-6cc21a74152c/run", {})
+                .post("/workflows/6a350e35-b1d2-4704-aa20-4a155282f0da/validate", {})
                 .then((response) => {
                     setApiMessage(JSON.stringify(response.data));
                 })

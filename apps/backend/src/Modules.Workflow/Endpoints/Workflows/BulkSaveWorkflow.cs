@@ -25,20 +25,47 @@ namespace Modules.Workflow.Endpoints.Workflows
             .Produces(StatusCodes.Status400BadRequest)
             .Produces(StatusCodes.Status500InternalServerError);
 
-            app.MapPost("/api/workflows/{id}/save", async (Guid id, BulkSaveWorkflowCommand command, ISender sender) =>
+            app.MapPost("/api/workflows/{id}/save", async (
+                Guid id,
+                WorkflowNodesEdgesRequest request,
+                ISender sender) =>
             {
-                var commandWithId = command with { Id = id };
-                var result = await sender.Send(commandWithId);
-                return result is not null ? Results.Ok(result) : Results.NotFound();
+                var command = new BulkSaveWorkflowCommand(
+                    id,
+                    null, // Name is not included for updates
+                    null, // Description is not included for updates
+                    request.Nodes,
+                    request.Edges
+                );
+
+                var result = await sender.Send(command);
+
+                if (result == null)
+                {
+                    return Results.NotFound();
+                }
+
+                return Results.Ok(result);
             })
             .RequireAuthorization()
             .WithTags("Workflows")
-            .WithName("Workflows_SaveExistingWorkflow")
+            .WithName("Workflows_BulkSave")
             .Produces<WorkflowDetailDto>(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound)
-            .Produces(StatusCodes.Status400BadRequest)
-            .Produces(StatusCodes.Status401Unauthorized)
-            .Produces(StatusCodes.Status500InternalServerError);
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status401Unauthorized);
         }
     }
+
+    // Original request with all fields
+    public record BulkSaveWorkflowRequest(
+        string? Name,
+        string? Description,
+        IEnumerable<WorkflowNodeDto> Nodes,
+        IEnumerable<WorkflowEdgeDto> Edges);
+        
+    // New request without Name and Description for the /api/workflows/{id}/save endpoint
+    public record WorkflowNodesEdgesRequest(
+        IEnumerable<WorkflowNodeDto> Nodes,
+        IEnumerable<WorkflowEdgeDto> Edges);
 }

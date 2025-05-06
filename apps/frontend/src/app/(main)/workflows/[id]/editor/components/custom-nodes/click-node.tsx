@@ -19,7 +19,6 @@ export const ClickNode = memo(({ data }: NodeProps) => {
                 type="target"
                 position={Position.Top}
                 id="input"
-                className="w-3 h-3 bg-gray-400 border-2 border-white dark:border-gray-800"
             />
             <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[250px]">
                 <div className="flex flex-col gap-2">
@@ -64,7 +63,6 @@ export const ClickNode = memo(({ data }: NodeProps) => {
                 type="source"
                 position={Position.Bottom}
                 id="output"
-                className="w-3 h-3 bg-indigo-500 border-2 border-white dark:border-gray-800"
             />
         </>
     );

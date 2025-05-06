@@ -14,6 +14,7 @@ import {
     MiniMap,
     useKeyPress,
     useOnSelectionChange,
+    BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import "./flow-editor.css";
@@ -151,8 +152,8 @@ const Flow = () => {
     );
 
     return (
-        <div className="flex h-full">
-            <div className="flex-1" ref={reactFlowWrapper}>
+        <div className="w-full h-full">
+            <div className="w-full h-full" ref={reactFlowWrapper}>
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -164,18 +165,24 @@ const Flow = () => {
                     nodeTypes={nodeTypes}
                     fitView
                     deleteKeyCode={null} // Disable built-in delete to use our custom implementation
+                    className="w-full h-full"
                 >
-                    <MiniMap
-                        nodeColor="#6366f1"
-                        nodeStrokeWidth={2}
-                        maskColor="rgba(0, 0, 0, 0.1)"
+                    <MiniMap 
+                        zoomable 
+                        pannable 
+                        nodeColor={(node) => {
+                            return node.selected ? 'var(--primary)' : 'var(--primary-foreground)';
+                        }}
+                        maskColor="var(--muted-foreground)"
+                        position="bottom-right"
                     />
-                    <Background />
+                    <Background variant={BackgroundVariant.Dots} />
                     <Controls orientation="horizontal" position="top-left" />
                     <Panel position="top-right">
                         <div className="flex gap-2">
                             <Button
                                 variant="outline"
+                                size="icon"
                                 onClick={deleteSelectedElements}
                                 disabled={
                                     !selectedElements.nodes.length &&
@@ -183,10 +190,6 @@ const Flow = () => {
                                 }
                             >
                                 <Trash2 className="h-4 w-4" />
-                                Delete Selected
-                            </Button>
-                            <Button onClick={() => console.log(nodes, edges)}>
-                                Save Flow
                             </Button>
                         </div>
                     </Panel>

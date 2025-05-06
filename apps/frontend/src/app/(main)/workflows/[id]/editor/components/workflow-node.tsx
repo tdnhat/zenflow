@@ -2,17 +2,10 @@
 
 import { Handle, NodeProps, Position } from "@xyflow/react";
 
-// Define our expected data shape
-interface CustomNodeData {
-    label: string;
-    description?: string;
-    icon?: React.ReactNode;
-}
-
 // Component props will be of type NodeProps with our custom data
 export default function WorkflowNode({ data, isConnectable }: NodeProps) {
     // Access the node data safely
-    const label = data?.label as string || 'Node';
+    const label = (data?.label as string) || "Node";
     const description = data?.description as string;
 
     return (
@@ -21,7 +14,6 @@ export default function WorkflowNode({ data, isConnectable }: NodeProps) {
             <Handle
                 type="target"
                 position={Position.Top}
-                className="w-3 h-3 bg-primary"
                 isConnectable={isConnectable}
             />
 
@@ -43,7 +35,6 @@ export default function WorkflowNode({ data, isConnectable }: NodeProps) {
             <Handle
                 type="source"
                 position={Position.Bottom}
-                className="w-3 h-3 bg-primary bottom-[-5px]"
                 isConnectable={isConnectable}
             />
         </div>

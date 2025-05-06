@@ -1,16 +1,13 @@
 "use client";
 
-import { ChevronRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import TaskNode from "./task-node";
 import { useNodeTypes } from "../../../_hooks/use-workflows";
 
 interface TaskLibraryProps {
-    onClose: () => void;
     isOpen: boolean;
 }
 
-export default function TaskLibrary({ onClose, isOpen }: TaskLibraryProps) {
+export default function TaskLibrary({ isOpen }: TaskLibraryProps) {
     const { data: nodeTypes, isLoading, error } = useNodeTypes();
     if (!isOpen) return null;
 
@@ -21,17 +18,9 @@ export default function TaskLibrary({ onClose, isOpen }: TaskLibraryProps) {
         <div className="flex flex-col h-full">
             <div className="p-4 border-b border-border flex justify-between items-center">
                 <h3 className="font-medium">Task Library</h3>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={onClose}
-                >
-                    <ChevronRight className="h-4 w-4" />
-                </Button>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1">
+            <div className="p-4 overflow-y-auto flex-1 pb-16">
                 <div className="space-y-6">
                     {nodeTypes?.map((category) => (
                         <div key={category.name} className="space-y-3">

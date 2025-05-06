@@ -19,31 +19,50 @@ type NodeData = {
 export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
     const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
     const nodeData = data as NodeData;
-    
+
     // Parse existing configJson if available
-    const existingConfig = nodeData.configJson ? JSON.parse(nodeData.configJson) : {};
-    
+    const existingConfig = nodeData.configJson
+        ? JSON.parse(nodeData.configJson)
+        : {};
+
     // Initialize with default values, prioritizing parsed values from configJson
     const [label, setLabel] = useState(nodeData.label || "Crawl Data");
-    const [selector, setSelector] = useState(existingConfig.selector || nodeData.selector || "");
-    const [timeout, setTimeout] = useState(existingConfig.timeout || nodeData.timeout || 30000);
+    const [selector, setSelector] = useState(
+        existingConfig.selector || nodeData.selector || ""
+    );
+    const [timeout, setTimeout] = useState(
+        existingConfig.timeout || nodeData.timeout || 30000
+    );
     const [extractAll, setExtractAll] = useState(
-        existingConfig.extractAll !== undefined ? existingConfig.extractAll :
-        nodeData.extractAll !== undefined ? nodeData.extractAll : true
+        existingConfig.extractAll !== undefined
+            ? existingConfig.extractAll
+            : nodeData.extractAll !== undefined
+            ? nodeData.extractAll
+            : true
     );
     const [propertyToExtract, setPropertyToExtract] = useState(
-        existingConfig.propertyToExtract || nodeData.propertyToExtract || "innerText"
+        existingConfig.propertyToExtract ||
+            nodeData.propertyToExtract ||
+            "innerText"
     );
     const [outputVariableName, setOutputVariableName] = useState(
-        existingConfig.outputVariableName || nodeData.outputVariableName || "extractedData"
+        existingConfig.outputVariableName ||
+            nodeData.outputVariableName ||
+            "extractedData"
     );
     const [waitForNetworkIdle, setWaitForNetworkIdle] = useState(
-        existingConfig.waitForNetworkIdle !== undefined ? existingConfig.waitForNetworkIdle :
-        nodeData.waitForNetworkIdle !== undefined ? nodeData.waitForNetworkIdle : true
+        existingConfig.waitForNetworkIdle !== undefined
+            ? existingConfig.waitForNetworkIdle
+            : nodeData.waitForNetworkIdle !== undefined
+            ? nodeData.waitForNetworkIdle
+            : true
     );
     const [waitForDomContentLoaded, setWaitForDomContentLoaded] = useState(
-        existingConfig.waitForDomContentLoaded !== undefined ? existingConfig.waitForDomContentLoaded :
-        nodeData.waitForDomContentLoaded !== undefined ? nodeData.waitForDomContentLoaded : true
+        existingConfig.waitForDomContentLoaded !== undefined
+            ? existingConfig.waitForDomContentLoaded
+            : nodeData.waitForDomContentLoaded !== undefined
+            ? nodeData.waitForDomContentLoaded
+            : true
     );
 
     // Initialize with proper node type and kind if not already set
@@ -52,7 +71,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
             updateNodeData(id, {
                 nodeType: "CrawlDataActivity",
                 nodeKind: "BROWSER_AUTOMATION",
-                label: label
+                label: label,
             });
         }
     }, [id, nodeData.nodeType, nodeData.nodeKind, label, updateNodeData]);
@@ -69,12 +88,12 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
             waitForNetworkIdle,
             waitForDomContentLoaded,
         });
-        
+
         updateNodeData(id, {
             label,
             nodeType: "CrawlDataActivity",
             nodeKind: "BROWSER_AUTOMATION",
-            configJson: newConfigJson
+            configJson: newConfigJson,
         });
     }, [
         id,
@@ -91,11 +110,11 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
 
     return (
         <>
-            <Handle type="target" position={Position.Top} id="input" />
-            <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[300px]">
+            <Handle type="target" position={Position.Left} id="input" />
+            <div className="p-4 rounded-md border-2 border-primary/50 bg-background shadow-md min-w-[300px]">
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium text-sm text-indigo-500">
-                        🕸️ {label}
+                    <div className="font-medium text-sm text-primary">
+                        {label}
                     </div>
 
                     <div className="mt-2">
@@ -112,7 +131,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             placeholder="Node Label"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Node label input"
                         />
                     </div>
@@ -131,7 +150,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                             value={selector}
                             onChange={(e) => setSelector(e.target.value)}
                             placeholder=".products li, table tr, .items"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Root selector input"
                         />
                     </div>
@@ -149,7 +168,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                             value={timeout}
                             onChange={(e) => setTimeout(Number(e.target.value))}
                             placeholder="30000"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Timeout input"
                         />
                     </div>
@@ -169,7 +188,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                                 setPropertyToExtract(e.target.value)
                             }
                             placeholder="innerText"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Property to extract input"
                         />
                     </div>
@@ -189,7 +208,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                                 setOutputVariableName(e.target.value)
                             }
                             placeholder="extractedData"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Output variable name input"
                         />
                     </div>
@@ -250,7 +269,7 @@ export const CrawlDataNode = memo(({ id, data }: NodeProps) => {
                     </div>
                 </div>
             </div>
-            <Handle type="source" position={Position.Bottom} id="output" />
+            <Handle type="source" position={Position.Right} id="output" />
         </>
     );
 });

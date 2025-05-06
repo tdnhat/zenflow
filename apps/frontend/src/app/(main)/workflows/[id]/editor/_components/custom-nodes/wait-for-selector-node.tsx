@@ -62,11 +62,11 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
 
     return (
         <>
-            <Handle type="target" position={Position.Top} id="input" />
-            <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[250px]">
+            <Handle type="target" position={Position.Left} id="input" />
+            <div className="p-4 rounded-md border-2 border-primary/50 bg-background shadow-md min-w-[250px]">
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium text-sm text-indigo-500">
-                        ⏳ {label}
+                    <div className="font-medium text-sm text-primary">
+                        {label}
                     </div>
                     
                     <div className="mt-2">
@@ -83,7 +83,7 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             placeholder="Node Label"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Node label input"
                         />
                     </div>
@@ -102,7 +102,7 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
                             value={selector}
                             onChange={(e) => setSelector(e.target.value)}
                             placeholder=".element, #id, [attribute]"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="CSS Selector input"
                         />
                     </div>
@@ -121,7 +121,7 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
                             value={timeout}
                             onChange={(e) => setTimeout(Number(e.target.value))}
                             placeholder="30000"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Timeout input"
                         />
                     </div>
@@ -133,7 +133,7 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
                             type="checkbox"
                             checked={visible}
                             onChange={(e) => setVisible(e.target.checked)}
-                            className="nodrag h-4 w-4 border-gray-300 rounded text-indigo-500 focus:ring-indigo-500"
+                            className="nodrag h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
                             aria-label="Visible checkbox"
                         />
                         <label htmlFor="visible" className="ml-2 block text-sm">
@@ -142,7 +142,7 @@ export const WaitForSelectorNode = memo(({ id, data }: NodeProps) => {
                     </div>
                 </div>
             </div>
-            <Handle type="source" position={Position.Bottom} id="output" />
+            <Handle type="source" position={Position.Right} id="output" />
         </>
     );
 });

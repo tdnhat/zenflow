@@ -30,15 +30,12 @@ import { CrawlDataNode } from "./custom-nodes/crawl-data-node";
 import { ClickNode } from "./custom-nodes/click-node";
 import { Button } from "@/components/ui/button";
 import { Save, Trash2 } from "lucide-react";
-import { mapWorkflowToDto, saveWorkflow } from "@/api/workflow/workflow-api";
+import { saveWorkflow } from "@/api/workflow/workflow-api";
 import { useParams } from "next/navigation";
 import { useWorkflowStore } from "@/store/workflow.store";
 import toast from "react-hot-toast";
 import { useNodeTypes } from "../../../_hooks/use-workflows";
 import { v4 as uuidv4 } from 'uuid';
-
-const initialNodes: Node[] = [];
-const initialEdges: Edge[] = [];
 
 // Define node types outside the component to avoid recreation on each render
 const nodeTypes = {
@@ -62,7 +59,7 @@ const Flow = () => {
         setNodes, 
         setEdges, 
         isSaving, 
-        setSaving 
+        setSaving
     } = useWorkflowStore();
 
     // Fetch node types to use their titles
@@ -70,12 +67,6 @@ const Flow = () => {
 
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { screenToFlowPosition } = useReactFlow();
-
-    // Initialize nodes and edges in the store
-    useEffect(() => {
-        setNodes(initialNodes);
-        setEdges(initialEdges);
-    }, [setNodes, setEdges]);
 
     // Track selected elements
     const [selectedElements, setSelectedElements] = useState<{
@@ -112,26 +103,44 @@ const Flow = () => {
             selectedElements.nodes.length > 0 ||
             selectedElements.edges.length > 0
         ) {
+            // Filter out the selected nodes
             setNodes(
                 nodes.filter(
                     (node) =>
                         !selectedElements.nodes.some((n) => n.id === node.id)
                 )
             );
+            
+            // Filter out the selected edges
             setEdges(
                 edges.filter(
                     (edge) =>
                         !selectedElements.edges.some((e) => e.id === edge.id)
                 )
             );
+            
+            // Clear selection after deletion to prevent infinite loop
+            setSelectedElements({ nodes: [], edges: [] });
         }
     }, [selectedElements, setNodes, setEdges, nodes, edges]);
 
     // Handle key press for deleting elements
     useEffect(() => {
+        let deleteTimeoutId: NodeJS.Timeout | null = null;
+        
         if (deleteKeyPressed) {
-            deleteSelectedElements();
+            // Use a setTimeout to prevent potential rapid re-renders
+            deleteTimeoutId = setTimeout(() => {
+                deleteSelectedElements();
+            }, 0);
         }
+        
+        // Cleanup timeout on unmount or when dependencies change
+        return () => {
+            if (deleteTimeoutId) {
+                clearTimeout(deleteTimeoutId);
+            }
+        };
     }, [deleteKeyPressed, deleteSelectedElements]);
 
     // Handle connections between nodes
@@ -200,16 +209,18 @@ const Flow = () => {
                 id: nodeId,
                 type: nodeType,
                 position,
-                data:
-                    nodeType === "custom"
-                        ? {
-                              label: `Custom Node ${nodes.length + 1}`,
-                              description: "Drag me around!",
-                          }
-                        : {
-                              label: nodeTitle,
-                              nodeKind: "ACTION", // Default node kind
-                          },
+                data: nodeType === "custom"
+                    ? {
+                        label: `Custom Node ${nodes.length + 1}`,
+                        description: "Drag me around!",
+                        nodeKind: "ACTION",
+                        nodeType: nodeType,
+                    }
+                    : {
+                        label: nodeTitle,
+                        nodeKind: "ACTION", // Default node kind
+                        nodeType: nodeType,
+                    },
             };
 
             // Add the new node to the graph
@@ -227,8 +238,6 @@ const Flow = () => {
 
         try {
             setSaving(true);
-            const workflowData = mapWorkflowToDto(nodes, edges);
-            console.log("Workflow data to save:", workflowData);
             await saveWorkflow(workflowId, nodes, edges);
             
             toast.success("Workflow saved successfully!");
@@ -266,7 +275,7 @@ const Flow = () => {
                         position="bottom-right"
                     />
                     <Background variant={BackgroundVariant.Dots} />
-                    <Controls orientation="horizontal" position="top-left" />
+                    <Controls />
                     <Panel position="top-right">
                         <div className="flex gap-2">
                             <Button

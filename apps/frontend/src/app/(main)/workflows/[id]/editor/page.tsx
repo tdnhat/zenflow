@@ -1,16 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { FlowEditor } from "./components/flow-editor";
-import TaskLibrary from "./components/task-library";
-import { FlowToolbar } from "./components/flow-toolbar";
+import { useState, useEffect } from "react";
+import { FlowEditor } from "./_components/flow-editor";
+import TaskLibrary from "./_components/task-library";
+import { FlowToolbar } from "./_components/flow-toolbar";
 import { useWorkflow } from "../../_hooks/use-workflow";
 import { useParams } from "next/navigation";
+import { useWorkflowStore } from "@/store/workflow.store";
 
 export default function WorkflowEditor() {
     const { id } = useParams();
     const { data: workflow, isLoading, isError } = useWorkflow(id as string);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    
+    // Get the initializeWorkflow function from the store
+    const { initializeWorkflow, isInitialized } = useWorkflowStore();
+    
+    // Initialize workflow data in the store when it's loaded
+    useEffect(() => {
+        if (workflow && !isInitialized) {
+            initializeWorkflow(workflow);
+        }
+    }, [workflow, initializeWorkflow, isInitialized]);
 
     if (isLoading) return <div>Loading...</div>;
     if (isError) return <div>Error loading workflow</div>;

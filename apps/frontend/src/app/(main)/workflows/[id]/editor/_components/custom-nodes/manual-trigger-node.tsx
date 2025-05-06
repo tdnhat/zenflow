@@ -10,12 +10,9 @@ type NodeData = {
 };
 
 export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
-    const updateNodeData = useWorkflowStore(state => state.updateNodeData);
+    const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
     const nodeData = data as NodeData;
-    
-    // Parse existing configJson if available
-    const existingConfig = nodeData.configJson ? JSON.parse(nodeData.configJson) : {};
-    
+
     // Initialize with default values
     const [label, setLabel] = useState(nodeData.label || "Manual Trigger");
 
@@ -25,36 +22,33 @@ export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
             updateNodeData(id, {
                 nodeType: "ManualTriggerActivity",
                 nodeKind: "TRIGGER",
-                label: label
+                label: label,
             });
         }
     }, [id, nodeData.nodeType, nodeData.nodeKind, label, updateNodeData]);
 
     // Sync state changes back to the store
     useEffect(() => {
-        // Only store the configuration in configJson, not other node properties
-        const newConfigJson = JSON.stringify({
-            // Manual trigger doesn't need any special configuration
-        });
-        
         updateNodeData(id, {
             label,
-            nodeType: "ManualTriggerActivity",
+            nodeType: "manual-trigger",
             nodeKind: "TRIGGER",
-            configJson: newConfigJson
         });
     }, [id, label, updateNodeData]);
 
     return (
         <>
-            <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[200px]">
+            <div className="p-4 rounded-md border-2 border-primary/50 bg-background shadow-md min-w-[200px]">
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium text-sm text-indigo-500">
-                        ▶️ {label}
+                    <div className="font-medium text-sm text-primary">
+                        {label}
                     </div>
-                    
+
                     <div className="mt-2">
-                        <label htmlFor="node-label" className="block text-sm font-medium mb-1">
+                        <label
+                            htmlFor="node-label"
+                            className="block text-sm font-medium mb-1"
+                        >
                             Label:
                         </label>
                         <input
@@ -70,11 +64,7 @@ export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
                     </div>
                 </div>
             </div>
-            <Handle
-                type="source"
-                position={Position.Bottom}
-                id="output"
-            />
+            <Handle type="source" position={Position.Right} id="output" />
         </>
     );
 });

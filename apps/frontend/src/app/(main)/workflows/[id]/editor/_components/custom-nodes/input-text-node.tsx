@@ -64,13 +64,13 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
         <>
             <Handle
                 type="target"
-                position={Position.Top}
+                position={Position.Left}
                 id="input"
             />
-            <div className="p-4 rounded-md border-2 border-indigo-500 bg-white dark:bg-background shadow-md min-w-[250px]">
+            <div className="p-4 rounded-md border-2 border-primary/50 bg-background shadow-md min-w-[250px]">
                 <div className="flex flex-col gap-2">
-                    <div className="font-medium text-sm text-indigo-500">
-                        ⌨️ {label}
+                    <div className="font-medium text-sm text-primary">
+                        {label}
                     </div>
                     
                     <div className="mt-2">
@@ -84,7 +84,7 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
                             value={label}
                             onChange={(e) => setLabel(e.target.value)}
                             placeholder="Node Label"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Node label input"
                         />
                     </div>
@@ -100,7 +100,7 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
                             value={selector}
                             onChange={(e) => setSelector(e.target.value)}
                             placeholder="input, textarea, [contenteditable]"
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="CSS Selector input"
                         />
                     </div>
@@ -116,7 +116,7 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
                             onChange={(e) => setText(e.target.value)}
                             placeholder="Enter text to type"
                             rows={3}
-                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800 resize-none"
+                            className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-white dark:bg-gray-800 resize-none"
                             aria-label="Text input"
                         />
                     </div>
@@ -128,7 +128,7 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
                             type="checkbox"
                             checked={clear}
                             onChange={(e) => setClear(e.target.checked)}
-                            className="nodrag h-4 w-4 border-gray-300 rounded text-indigo-500 focus:ring-indigo-500"
+                            className="nodrag h-4 w-4 border-gray-300 rounded text-primary focus:ring-primary"
                             aria-label="Clear checkbox"
                         />
                         <label htmlFor="clear" className="ml-2 block text-sm">
@@ -139,7 +139,7 @@ export const InputTextNode = memo(({ id, data }: NodeProps) => {
             </div>
             <Handle
                 type="source"
-                position={Position.Bottom}
+                position={Position.Right}
                 id="output"
             />
         </>

@@ -96,24 +96,39 @@ export const showToast = (message: string, options?: CustomToastOptions) => {
     }
 };
 
-// Helper function to convert React Flow nodes and edges to backend DTO format
+/**
+ * Helper function to convert React Flow nodes and edges to backend DTO format
+ */
 export const mapWorkflowToDto = (
     nodes: Node[],
     edges: Edge[]
 ): WorkflowSaveValues => {
-    // Map nodes from React Flow format to backend DTO format
-    const mappedNodes = nodes.map((node) => ({
+    return {
+        nodes: mapNodesToDto(nodes),
+        edges: mapEdgesToDto(edges)
+    };
+};
+
+/**
+ * Map nodes from React Flow format to backend DTO format
+ */
+export const mapNodesToDto = (nodes: Node[]) => {
+    return nodes.map((node) => ({
         id: node.id,
-        nodeType: node.type || "default",
+        nodeType: String(node.data?.nodeType || node.type || "default"),
         nodeKind: (node.data?.nodeKind || "ACTION") as string,
         label: String(node.data?.label || node.type || ""),
         x: node.position.x,
         y: node.position.y,
         configJson: JSON.stringify(node.data || {}),
     }));
+};
 
-    // Map edges from React Flow format to backend DTO format
-    const mappedEdges = edges.map((edge) => ({
+/**
+ * Map edges from React Flow format to backend DTO format
+ */
+export const mapEdgesToDto = (edges: Edge[]) => {
+    return edges.map((edge) => ({
         id: edge.id,
         sourceNodeId: edge.source,
         targetNodeId: edge.target,
@@ -123,9 +138,4 @@ export const mapWorkflowToDto = (
         sourceHandle: edge.sourceHandle || "",
         targetHandle: edge.targetHandle || "",
     }));
-
-    return {
-        nodes: mappedNodes,
-        edges: mappedEdges,
-    };
 };

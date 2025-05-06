@@ -1,8 +1,8 @@
 import { memo, useEffect, useState } from "react";
 import { Handle, Position, NodeProps } from "@xyflow/react";
-import { useWorkflowStore } from "@/store/workflow.store";
+import { useWorkflowStore, nodeTypeTransformers } from "@/store/workflow.store";
 
-type NodeData = {
+type ManualTriggerNodeData = {
     label?: string;
     nodeKind?: string;
     nodeType?: string;
@@ -11,7 +11,7 @@ type NodeData = {
 
 export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
     const updateNodeData = useWorkflowStore((state) => state.updateNodeData);
-    const nodeData = data as NodeData;
+    const nodeData = data as ManualTriggerNodeData;
 
     // Initialize with default values
     const [label, setLabel] = useState(nodeData.label || "Manual Trigger");
@@ -20,18 +20,26 @@ export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
     useEffect(() => {
         if (!nodeData.nodeType || !nodeData.nodeKind) {
             updateNodeData(id, {
-                nodeType: "ManualTriggerActivity",
+                // Use the backend node type
+                nodeType: nodeTypeTransformers.toBackend("manual-trigger"),
                 nodeKind: "TRIGGER",
                 label: label,
             });
         }
     }, [id, nodeData.nodeType, nodeData.nodeKind, label, updateNodeData]);
 
+    // Handler for label change
+    const handleLabelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newLabel = e.target.value;
+        setLabel(newLabel);
+    };
+
     // Sync state changes back to the store
     useEffect(() => {
         updateNodeData(id, {
             label,
-            nodeType: "manual-trigger",
+            // Keep the frontend node type in the type property
+            nodeType: nodeTypeTransformers.toBackend("manual-trigger"),
             nodeKind: "TRIGGER",
         });
     }, [id, label, updateNodeData]);
@@ -46,17 +54,17 @@ export const ManualTriggerNode = memo(({ id, data }: NodeProps) => {
 
                     <div className="mt-2">
                         <label
-                            htmlFor="node-label"
+                            htmlFor={`node-${id}-label`}
                             className="block text-sm font-medium mb-1"
                         >
                             Label:
                         </label>
                         <input
-                            id="node-label"
-                            name="node-label"
+                            id={`node-${id}-label`}
+                            name={`node-${id}-label`}
                             type="text"
                             value={label}
-                            onChange={(e) => setLabel(e.target.value)}
+                            onChange={handleLabelChange}
                             placeholder="Node Label"
                             className="nodrag w-full px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white dark:bg-gray-800"
                             aria-label="Node label input"

@@ -63,7 +63,7 @@ export const ClickNode = memo(({ id, data }: NodeProps) => {
             <div className="p-4 rounded-md border-2 border-primary/50 bg-background shadow-md min-w-[250px]">
                 <div className="flex flex-col gap-2">
                     <div className="font-medium text-sm text-primary">
-                        🖱️ {label}
+                        {label}
                     </div>
                     
                     <div className="mt-2">

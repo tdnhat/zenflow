@@ -1,5 +1,36 @@
 import { z } from "zod";
 
+// Schema for workflow nodes
+export const workflowNodeSchema = z.object({
+    id: z.string(),
+    nodeType: z.string(),
+    nodeKind: z.string(),
+    label: z.string(),
+    x: z.number(),
+    y: z.number(),
+    configJson: z.string(),
+});
+
+// Schema for workflow edges
+export const workflowEdgeSchema = z.object({
+    id: z.string(),
+    sourceNodeId: z.string(),
+    targetNodeId: z.string(),
+    label: z.string().optional().default(""),
+    edgeType: z.string().optional().default("default"),
+    conditionJson: z.string().optional().default("{}"),
+    sourceHandle: z.string().optional().default(""),
+    targetHandle: z.string().optional().default(""),
+});
+
+// Schema for bulk saving workflow
+export const workflowSaveSchema = z.object({
+    name: z.string().optional(),
+    description: z.string().optional(),
+    nodes: z.array(workflowNodeSchema),
+    edges: z.array(workflowEdgeSchema),
+});
+
 // Define the form schema with Zod
 export const workflowFormSchema = z.object({
     name: z
@@ -18,3 +49,4 @@ export const workflowFormSchema = z.object({
 
 // Type for the form values
 export type WorkflowFormValues = z.infer<typeof workflowFormSchema>;
+export type WorkflowSaveValues = z.infer<typeof workflowSaveSchema>;

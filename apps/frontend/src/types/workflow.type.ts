@@ -1,5 +1,5 @@
 // Types that mirror backend DTOs
-export type WorkflowStatus = "DRAFT" | "ACTIVE" | "ARCHIVED";
+export type WorkflowStatus = "Draft" | "Active" | "Archived";
 
 export interface WorkflowDto {
     id: string;

@@ -1,8 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Modules.Workflow.Data;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.Infrastructure.Events;
 using ZenFlow.Shared.Domain;
+using Modules.Workflow.Dtos;
+using Modules.Workflow.DDD.Entities;
+using Modules.Workflow.DDD.ValueObjects;
+using System.Text.Json;
 
 namespace Modules.Workflow.Repositories
 {
@@ -49,10 +54,16 @@ namespace Modules.Workflow.Repositories
             await _dbContext.Workflows.AddAsync(workflow, cancellationToken);
         }
 
-        public Task UpdateAsync(DDD.Entities.Workflow workflow, CancellationToken cancellationToken = default)
+        public async Task UpdateAsync(DDD.Entities.Workflow workflow, CancellationToken cancellationToken = default)
         {
-            _dbContext.Workflows.Update(workflow);
-            return Task.CompletedTask;
+            try
+            {
+                _dbContext.Workflows.Update(workflow);
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                throw new Exception("The workflow has been modified by another user. Please refresh and try again.", ex);
+            }
         }
 
         public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
@@ -88,6 +99,189 @@ namespace Modules.Workflow.Repositories
                 .AsNoTracking()
                 .Where(w => w.CreatedBy == userId)
                 .ToListAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Forces an update of workflow nodes and edges, bypassing EF Core's optimistic concurrency checks
+        /// by using direct SQL commands instead of the regular EF Core change tracking.
+        /// </summary>
+        public async Task ForceUpdateNodesAndEdgesAsync(
+            Guid workflowId, 
+            List<WorkflowNodeDto> nodes, 
+            List<WorkflowEdgeDto> edges, 
+            CancellationToken cancellationToken = default)
+        {
+            // Detach any existing tracked entities for this workflow to prevent conflicts
+            var trackedWorkflow = _dbContext.ChangeTracker.Entries<DDD.Entities.Workflow>()
+                .FirstOrDefault(e => e.Entity.Id == workflowId);
+                
+            if (trackedWorkflow != null)
+            {
+                trackedWorkflow.State = EntityState.Detached;
+            }
+                
+            var trackedNodes = _dbContext.ChangeTracker.Entries<WorkflowNode>()
+                .Where(e => e.Entity.WorkflowId == workflowId)
+                .ToList();
+                
+            foreach (var entry in trackedNodes)
+            {
+                entry.State = EntityState.Detached;
+            }
+                
+            var trackedEdges = _dbContext.ChangeTracker.Entries<WorkflowEdge>()
+                .Where(e => e.Entity.WorkflowId == workflowId)
+                .ToList();
+                
+            foreach (var entry in trackedEdges)
+            {
+                entry.State = EntityState.Detached;
+            }
+
+            // First, get existing nodes and edges from database directly
+            var existingNodes = await _dbContext.WorkflowNodes
+                .AsNoTracking()
+                .Where(n => n.WorkflowId == workflowId)
+                .ToListAsync(cancellationToken);
+                
+            var existingEdges = await _dbContext.WorkflowEdges
+                .AsNoTracking()
+                .Where(e => e.WorkflowId == workflowId)
+                .ToListAsync(cancellationToken);
+            
+            // Determine which nodes to add, update, or delete
+            var nodesToDelete = existingNodes
+                .Where(n => !nodes.Any(dto => dto.Id == n.Id))
+                .ToList();
+                
+            var nodesToUpdate = existingNodes
+                .Where(n => nodes.Any(dto => dto.Id == n.Id))
+                .ToList();
+                
+            var nodesToAdd = nodes
+                .Where(dto => !existingNodes.Any(n => n.Id == dto.Id))
+                .ToList();
+                
+            // Similarly for edges
+            var edgesToDelete = existingEdges
+                .Where(e => !edges.Any(dto => dto.Id == e.Id))
+                .ToList();
+                
+            var edgesToUpdate = existingEdges
+                .Where(e => edges.Any(dto => dto.Id == e.Id))
+                .ToList();
+                
+            var edgesToAdd = edges
+                .Where(dto => !existingEdges.Any(e => e.Id == dto.Id))
+                .ToList();
+                
+            // Create a temporary ID mapping dictionary for new nodes
+            Dictionary<Guid, Guid> nodeIdMap = new Dictionary<Guid, Guid>();
+            
+            // Delete nodes first (due to foreign key constraints)
+            foreach (var node in nodesToDelete)
+            {
+                _dbContext.WorkflowNodes.Remove(node);
+            }
+            
+            // Delete edges that need to be removed
+            foreach (var edge in edgesToDelete)
+            {
+                _dbContext.WorkflowEdges.Remove(edge);
+            }
+            
+            // Update existing nodes
+            foreach (var existingNode in nodesToUpdate)
+            {
+                var nodeDto = nodes.First(dto => dto.Id == existingNode.Id);
+                
+                // Update the node properties
+                existingNode.Update(
+                    nodeDto.NodeType,
+                    nodeDto.NodeKind,
+                    nodeDto.X,
+                    nodeDto.Y,
+                    nodeDto.Label,
+                    nodeDto.ConfigJson
+                );
+                
+                _dbContext.WorkflowNodes.Update(existingNode);
+            }
+            
+            // Add new nodes
+            foreach (var nodeDto in nodesToAdd)
+            {
+                var newNode = WorkflowNode.Create(
+                    workflowId,
+                    nodeDto.NodeType,
+                    nodeDto.NodeKind,
+                    nodeDto.X,
+                    nodeDto.Y,
+                    nodeDto.Label,
+                    nodeDto.ConfigJson
+                );
+                
+                // Store mapping from temporary ID to real ID
+                nodeIdMap[nodeDto.Id] = newNode.Id;
+                
+                await _dbContext.WorkflowNodes.AddAsync(newNode, cancellationToken);
+            }
+            
+            // We need to save changes to get the real IDs for new nodes
+            // before processing edges that might reference them
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            // Update existing edges
+            foreach (var existingEdge in edgesToUpdate)
+            {
+                var edgeDto = edges.First(dto => dto.Id == existingEdge.Id);
+                
+                // Update the edge properties
+                existingEdge.Update(
+                    edgeDto.Label,
+                    edgeDto.EdgeType,
+                    edgeDto.ConditionJson,
+                    edgeDto.SourceHandle,
+                    edgeDto.TargetHandle
+                );
+                
+                _dbContext.WorkflowEdges.Update(existingEdge);
+            }
+            
+            // Add new edges
+            foreach (var edgeDto in edgesToAdd)
+            {
+                // Resolve source and target node IDs (they might be temporary IDs)
+                Guid sourceNodeId = nodeIdMap.ContainsKey(edgeDto.SourceNodeId) 
+                    ? nodeIdMap[edgeDto.SourceNodeId] 
+                    : edgeDto.SourceNodeId;
+                    
+                Guid targetNodeId = nodeIdMap.ContainsKey(edgeDto.TargetNodeId) 
+                    ? nodeIdMap[edgeDto.TargetNodeId] 
+                    : edgeDto.TargetNodeId;
+                
+                var newEdge = WorkflowEdge.Create(
+                    workflowId,
+                    sourceNodeId,
+                    targetNodeId,
+                    edgeDto.Label,
+                    edgeDto.EdgeType,
+                    edgeDto.ConditionJson,
+                    edgeDto.SourceHandle,
+                    edgeDto.TargetHandle
+                );
+                
+                await _dbContext.WorkflowEdges.AddAsync(newEdge, cancellationToken);
+            }
+            
+            // Save all changes
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            
+            // Update the workflow Version property to reset concurrency token
+            // Use a direct ExecuteSql approach to bypass EF concurrency validation
+            await _dbContext.Database.ExecuteSqlRawAsync(
+                "UPDATE workflow.\"Workflows\" SET \"Version\" = @p0 WHERE \"Id\" = @p1",
+                new byte[0], workflowId);
         }
 
         private List<IDomainEvent> CollectDomainEvents()

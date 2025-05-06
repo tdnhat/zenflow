@@ -1,6 +1,8 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { toast, ToastOptions } from "react-hot-toast";
+import { WorkflowSaveValues } from "@/app/(main)/workflows/_schemas/workflow.schemas";
+import { Edge, Node } from "@xyflow/react";
 
 /**
  * Combines class names with Tailwind CSS classes safely
@@ -92,4 +94,38 @@ export const showToast = (message: string, options?: CustomToastOptions) => {
                 ...rest,
             });
     }
+};
+
+// Helper function to convert React Flow nodes and edges to backend DTO format
+export const mapWorkflowToDto = (
+    nodes: Node[],
+    edges: Edge[]
+): WorkflowSaveValues => {
+    // Map nodes from React Flow format to backend DTO format
+    const mappedNodes = nodes.map((node) => ({
+        id: node.id,
+        nodeType: node.type || "default",
+        nodeKind: (node.data?.nodeKind || "ACTION") as string,
+        label: String(node.data?.label || node.type || ""),
+        x: node.position.x,
+        y: node.position.y,
+        configJson: JSON.stringify(node.data || {}),
+    }));
+
+    // Map edges from React Flow format to backend DTO format
+    const mappedEdges = edges.map((edge) => ({
+        id: edge.id,
+        sourceNodeId: edge.source,
+        targetNodeId: edge.target,
+        label: String(edge.label || ""),
+        edgeType: edge.type || "default",
+        conditionJson: JSON.stringify(edge.data || {}),
+        sourceHandle: edge.sourceHandle || "",
+        targetHandle: edge.targetHandle || "",
+    }));
+
+    return {
+        nodes: mappedNodes,
+        edges: mappedEdges,
+    };
 };

@@ -1,4 +1,6 @@
-﻿using Modules.Workflow.DDD.Events;
+﻿using System;
+using System.Collections.Generic;
+using Modules.Workflow.DDD.Events;
 using Modules.Workflow.DDD.Events.WorkflowEdgeEvents;
 using Modules.Workflow.DDD.ValueObjects;
 using ZenFlow.Shared.Domain;
@@ -9,7 +11,8 @@ namespace Modules.Workflow.DDD.Entities
     {
         public string Name { get; private set; } = default!;
         public string Description { get; private set; } = string.Empty;
-        public WorkflowStatus Status { get; private set; } = WorkflowStatus.DRAFT;
+        public WorkflowStatus Status { get; private set; } = WorkflowStatus.Draft;
+        public byte[] Version { get; private set; } = new byte[0]; // Concurrency token
 
         public List<WorkflowNode> Nodes { get; private set; } = new();
         public List<WorkflowEdge> Edges { get; private set; } = new();
@@ -24,7 +27,8 @@ namespace Modules.Workflow.DDD.Entities
                 Id = Guid.NewGuid(),
                 Name = name,
                 Description = description,
-                Status = WorkflowStatus.DRAFT
+                Status = WorkflowStatus.Draft,
+                Version = new byte[0]
             };
 
             // Raise domain event
@@ -37,6 +41,7 @@ namespace Modules.Workflow.DDD.Entities
         {
             Name = name;
             Description = description;
+            Version = new byte[0]; // Reset version on update
 
             // Raise domain event
             AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
@@ -45,13 +50,14 @@ namespace Modules.Workflow.DDD.Entities
         // Update basic workflow information - used for bulk update operations
         public void UpdateBasicInfo(string name, string description)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
             
             Name = name;
             Description = description;
+            Version = new byte[0]; // Reset version on update
 
             // Raise domain event
             AddDomainEvent(new WorkflowUpdatedEvent(Id, name));
@@ -59,7 +65,8 @@ namespace Modules.Workflow.DDD.Entities
 
         public void Archive()
         {
-            Status = WorkflowStatus.ARCHIVED;
+            Status = WorkflowStatus.Archived;
+            Version = new byte[0]; // Reset version on update
 
             // Raise domain event for archiving workflow
             AddDomainEvent(new WorkflowArchivedEvent(Id));
@@ -67,12 +74,13 @@ namespace Modules.Workflow.DDD.Entities
 
         public void Restore()
         {
-            if (Status != WorkflowStatus.ARCHIVED)
+            if (Status != WorkflowStatus.Archived)
             {
                 return; // Only archived workflows can be restored
             }
 
-            Status = WorkflowStatus.DRAFT;
+            Status = WorkflowStatus.Draft;
+            Version = new byte[0]; // Reset version on update
 
             // Raise domain event for restoring workflow
             AddDomainEvent(new WorkflowRestoredEvent(Id));
@@ -81,13 +89,14 @@ namespace Modules.Workflow.DDD.Entities
         // Node management methods
         public WorkflowNode AddNode(string nodeType, string nodeKind, float x, float y, string label, string configJson)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
 
             var node = WorkflowNode.Create(Id, nodeType, nodeKind, x, y, label, configJson);
             Nodes.Add(node);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowNodeCreatedEvent(node.Id, Id, nodeType));
@@ -97,7 +106,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public void UpdateNode(Guid nodeId, float x, float y, string label, string configJson)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
@@ -109,6 +118,7 @@ namespace Modules.Workflow.DDD.Entities
             }
 
             node.Update(x, y, label, configJson);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowNodeUpdatedEvent(nodeId, Id, node.NodeType));
@@ -116,7 +126,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public void RemoveNode(Guid nodeId)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
@@ -135,6 +145,7 @@ namespace Modules.Workflow.DDD.Entities
             }
 
             Nodes.Remove(node);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowNodeDeletedEvent(nodeId, Id));
@@ -143,7 +154,7 @@ namespace Modules.Workflow.DDD.Entities
         // Edge management methods
         public WorkflowEdge AddEdge(Guid sourceNodeId, Guid targetNodeId, string label, string edgeType, string conditionJson, string sourceHandle = "", string targetHandle = "")
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
@@ -161,6 +172,7 @@ namespace Modules.Workflow.DDD.Entities
 
             var edge = WorkflowEdge.Create(Id, sourceNodeId, targetNodeId, label, edgeType, conditionJson, sourceHandle, targetHandle);
             Edges.Add(edge);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowEdgeCreatedEvent(edge.Id, Id, sourceNodeId, targetNodeId));
@@ -170,7 +182,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public void UpdateEdge(Guid edgeId, string label, string edgeType, string conditionJson, string sourceHandle, string targetHandle)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
@@ -182,6 +194,7 @@ namespace Modules.Workflow.DDD.Entities
             }
 
             edge.Update(label, edgeType, conditionJson, sourceHandle, targetHandle);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowEdgeUpdatedEvent(edgeId, Id, edge.SourceNodeId, edge.TargetNodeId));
@@ -189,7 +202,7 @@ namespace Modules.Workflow.DDD.Entities
 
         public void RemoveEdge(Guid edgeId)
         {
-            if (Status == WorkflowStatus.ARCHIVED)
+            if (Status == WorkflowStatus.Archived)
             {
                 throw new InvalidOperationException("Cannot modify an archived workflow");
             }
@@ -201,6 +214,7 @@ namespace Modules.Workflow.DDD.Entities
             }
 
             Edges.Remove(edge);
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowEdgeDeletedEvent(edgeId, Id, edge.SourceNodeId, edge.TargetNodeId));
@@ -209,7 +223,7 @@ namespace Modules.Workflow.DDD.Entities
         // Activate workflow - transition from DRAFT to ACTIVE
         public void Activate()
         {
-            if (Status != WorkflowStatus.DRAFT)
+            if (Status != WorkflowStatus.Draft)
             {
                 throw new InvalidOperationException($"Cannot activate workflow in {Status} status");
             }
@@ -220,7 +234,8 @@ namespace Modules.Workflow.DDD.Entities
                 throw new InvalidOperationException("Cannot activate workflow without nodes");
             }
 
-            Status = WorkflowStatus.ACTIVE;
+            Status = WorkflowStatus.Active;
+            Version = new byte[0]; // Reset version on update
             
             // Raise domain event
             AddDomainEvent(new WorkflowActivatedEvent(Id.ToString(), DateTime.UtcNow, Name));

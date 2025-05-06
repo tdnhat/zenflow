@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.ValueObjects;
 
 namespace Modules.Workflow.Data.Configurations
@@ -28,6 +28,11 @@ namespace Modules.Workflow.Data.Configurations
                 .HasConversion(
                     v => v.ToStringValue(),
                     v => WorkflowStatusExtensions.FromString(v));
+
+            // Configure Version as a concurrency token
+            builder.Property(w => w.Version)
+                .IsRequired()
+                .IsConcurrencyToken();
 
             builder.Ignore(w => w.DomainEvents); // Ignore domain events
         }

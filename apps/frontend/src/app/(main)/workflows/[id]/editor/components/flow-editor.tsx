@@ -6,8 +6,8 @@ import {
     ReactFlow,
     ReactFlowProvider,
     addEdge,
-    useEdgesState,
-    useNodesState,
+    applyNodeChanges,
+    applyEdgeChanges,
     useReactFlow,
     Panel,
     Connection,
@@ -15,10 +15,12 @@ import {
     useKeyPress,
     useOnSelectionChange,
     BackgroundVariant,
+    NodeChange,
+    EdgeChange,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import "./flow-editor.css";
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 import { ManualTriggerNode } from "./custom-nodes/manual-trigger-node";
 import { NavigateNode } from "./custom-nodes/navigate-node";
 import { InputTextNode } from "./custom-nodes/input-text-node";
@@ -27,7 +29,13 @@ import { ScreenshotNode } from "./custom-nodes/screenshot-node";
 import { CrawlDataNode } from "./custom-nodes/crawl-data-node";
 import { ClickNode } from "./custom-nodes/click-node";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react";
+import { Save, Trash2 } from "lucide-react";
+import { mapWorkflowToDto, saveWorkflow } from "@/api/workflow/workflow-api";
+import { useParams } from "next/navigation";
+import { useWorkflowStore } from "@/store/workflow.store";
+import toast from "react-hot-toast";
+import { useNodeTypes } from "../../../_hooks/use-workflows";
+import { v4 as uuidv4 } from 'uuid';
 
 const initialNodes: Node[] = [];
 const initialEdges: Edge[] = [];
@@ -44,10 +52,30 @@ const nodeTypes = {
 };
 
 const Flow = () => {
+    const params = useParams<{ id: string }>();
+    const workflowId = params.id;
+
+    // Use Zustand store for workflow state
+    const { 
+        nodes, 
+        edges, 
+        setNodes, 
+        setEdges, 
+        isSaving, 
+        setSaving 
+    } = useWorkflowStore();
+
+    // Fetch node types to use their titles
+    const { data: nodeTypesData } = useNodeTypes();
+
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
-    const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-    const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
     const { screenToFlowPosition } = useReactFlow();
+
+    // Initialize nodes and edges in the store
+    useEffect(() => {
+        setNodes(initialNodes);
+        setEdges(initialEdges);
+    }, [setNodes, setEdges]);
 
     // Track selected elements
     const [selectedElements, setSelectedElements] = useState<{
@@ -68,26 +96,36 @@ const Flow = () => {
         },
     });
 
+    // Handle node changes (position, selection, etc.)
+    const onNodesChange = useCallback((changes: NodeChange[]) => {
+        setNodes(applyNodeChanges(changes, nodes));
+    }, [setNodes, nodes]);
+
+    // Handle edge changes
+    const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+        setEdges(applyEdgeChanges(changes, edges));
+    }, [setEdges, edges]);
+
     // Handle deleting selected elements
     const deleteSelectedElements = useCallback(() => {
         if (
             selectedElements.nodes.length > 0 ||
             selectedElements.edges.length > 0
         ) {
-            setNodes((nds) =>
-                nds.filter(
+            setNodes(
+                nodes.filter(
                     (node) =>
                         !selectedElements.nodes.some((n) => n.id === node.id)
                 )
             );
-            setEdges((eds) =>
-                eds.filter(
+            setEdges(
+                edges.filter(
                     (edge) =>
                         !selectedElements.edges.some((e) => e.id === edge.id)
                 )
             );
         }
-    }, [selectedElements, setNodes, setEdges]);
+    }, [selectedElements, setNodes, setEdges, nodes, edges]);
 
     // Handle key press for deleting elements
     useEffect(() => {
@@ -98,8 +136,20 @@ const Flow = () => {
 
     // Handle connections between nodes
     const onConnect = useCallback(
-        (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-        [setEdges]
+        (params: Connection) => {
+            // Generate a new UUID for the edge
+            const edgeId = uuidv4();
+            const newEdge: Edge = {
+                id: edgeId,
+                source: params.source,
+                target: params.target,
+                sourceHandle: params.sourceHandle || null,
+                targetHandle: params.targetHandle || null,
+                type: 'default',
+            };
+            setEdges(addEdge(newEdge, edges));
+        },
+        [setEdges, edges]
     );
 
     // Handle drag over for drag and drop functionality
@@ -107,6 +157,16 @@ const Flow = () => {
         event.preventDefault();
         event.dataTransfer.dropEffect = "move";
     }, []);
+
+    // Find node title from nodeTypesData based on node type
+    const findNodeTitle = useCallback((nodeType: string) => {
+        if (!nodeTypesData) return nodeType;
+        
+        // Flatten all tasks from all categories and find the matching one
+        const allTasks = nodeTypesData.flatMap(category => category.tasks);
+        const task = allTasks.find(task => task.type === nodeType);
+        return task?.title || nodeType;
+    }, [nodeTypesData]);
 
     // Create a new node when dropping onto the canvas
     const onDrop = useCallback(
@@ -129,9 +189,15 @@ const Flow = () => {
                 y: event.clientY,
             });
 
+            // Find the title for this node type
+            const nodeTitle = findNodeTitle(nodeType);
+
+            // Generate a new UUID for the node
+            const nodeId = uuidv4();
+
             // Create the new node with appropriate data
-            const newNode = {
-                id: `node_${nodes.length + 1}`,
+            const newNode: Node = {
+                id: nodeId,
                 type: nodeType,
                 position,
                 data:
@@ -141,15 +207,38 @@ const Flow = () => {
                               description: "Drag me around!",
                           }
                         : {
-                              label: `${nodeType} node`,
+                              label: nodeTitle,
+                              nodeKind: "ACTION", // Default node kind
                           },
             };
 
             // Add the new node to the graph
-            setNodes((nds) => nds.concat(newNode));
+            setNodes([...nodes, newNode]);
         },
-        [screenToFlowPosition, nodes.length, setNodes]
+        [screenToFlowPosition, nodes, setNodes, findNodeTitle]
     );
+
+    // Handle saving the workflow
+    const handleSaveWorkflow = async () => {
+        if (!workflowId) {
+            toast.error("Workflow ID is missing.");
+            return;
+        }
+
+        try {
+            setSaving(true);
+            const workflowData = mapWorkflowToDto(nodes, edges);
+            console.log("Workflow data to save:", workflowData);
+            await saveWorkflow(workflowId, nodes, edges);
+            
+            toast.success("Workflow saved successfully!");
+        } catch (error) {
+            console.error("Error saving workflow:", error);
+            toast.error("Failed to save workflow. Please try again.");
+        } finally {
+            setSaving(false);
+        }
+    };
 
     return (
         <div className="w-full h-full">
@@ -191,6 +280,15 @@ const Flow = () => {
                             >
                                 <Trash2 className="h-4 w-4" />
                             </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={handleSaveWorkflow}
+                                disabled={isSaving}
+                            >
+                                <Save className="h-4 w-4" />
+                            </Button>
+                            
                         </div>
                     </Panel>
                 </ReactFlow>

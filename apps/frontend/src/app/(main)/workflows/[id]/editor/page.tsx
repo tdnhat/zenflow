@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { FlowEditor } from "./_components/flow-editor";
 import TaskLibrary from "./_components/task-library";
 import { FlowToolbar } from "./_components/flow-toolbar";
@@ -8,39 +8,53 @@ import { useWorkflow } from "../../_hooks/use-workflow";
 import { useParams } from "next/navigation";
 import { useWorkflowStore } from "@/store/workflow.store";
 import { Loader2 } from "lucide-react";
+import WorkflowError from "../../_components/workflow-error";
 
 export default function WorkflowEditor() {
     const { id } = useParams();
     const workflowId = id as string;
-    
+
     // Fetch workflow data from API
-    const { data: workflow, isLoading, isError, error } = useWorkflow(workflowId);
-    
+    const {
+        data: workflow,
+        isLoading,
+        isError,
+        refetch,
+    } = useWorkflow(workflowId);
+
     // UI state
     const [sidebarOpen, setSidebarOpen] = useState(true);
-    
+
     // Workflow store state
-    const { initializeWorkflow, isInitialized, clearWorkflow } = useWorkflowStore();
-    
+    const { initializeWorkflow, isInitialized, clearWorkflow } =
+        useWorkflowStore();
+
     // Initialize workflow data in the store when it's loaded
     useEffect(() => {
         if (workflow && !isInitialized) {
             // Initialize the workflow with backend data
             initializeWorkflow(workflow);
         }
-        
+    }, [workflow, initializeWorkflow, isInitialized]);
+
+    // Separate useEffect for cleanup to prevent infinite loops
+    useEffect(() => {
         // Clear workflow data when component unmounts
         return () => {
             clearWorkflow();
         };
-    }, [workflow, initializeWorkflow, isInitialized, clearWorkflow]);
+    }, []);  // Empty dependency array ensures this only runs on mount/unmount
+
+    const handleRetry = useCallback(() => {
+        refetch();
+    }, [refetch]);
 
     // Loading states
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-full">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-                <span className="ml-2 text-lg">Loading workflow...</span>
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                <span className="ml-2">Loading workflow...</span>
             </div>
         );
     }
@@ -48,10 +62,16 @@ export default function WorkflowEditor() {
     // Error state
     if (isError) {
         return (
-            <div className="flex flex-col items-center justify-center h-full text-destructive">
-                <h2 className="text-xl font-semibold mb-2">Error loading workflow</h2>
-                <p>{error?.message || "An unknown error occurred"}</p>
-            </div>
+            <WorkflowError
+                message="Unable to fetch workflow data. The server returned an invalid response."
+                errorCode="ERR_FETCH_FAILED"
+                retry={handleRetry}
+                suggestions={[
+                    "Check your internet connection",
+                    "Verify that the API endpoint is correct",
+                    "Contact support if the problem persists",
+                ]}
+            />
         );
     }
 
@@ -74,7 +94,9 @@ export default function WorkflowEditor() {
                     ) : (
                         <div className="flex items-center justify-center h-full">
                             <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                            <span className="ml-2">Initializing workflow editor...</span>
+                            <span className="ml-2">
+                                Initializing workflow editor...
+                            </span>
                         </div>
                     )}
                 </div>

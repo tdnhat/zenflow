@@ -6,8 +6,9 @@ import { WorkflowList } from "./_components/workflow-list";
 import { useWorkflows } from "./_hooks/use-workflows";
 import { WorkflowModal } from "./_components/workflow-modal";
 import { useWorkflowStore } from "@/store/workflow.store";
-import { memo } from "react";
+import { memo, useCallback } from "react";
 import WorkflowListSkeleton from "./_components/workflow-list-skeleton";
+import WorkflowError from "./_components/workflow-error";
 
 // Memoize the EmptyState component to prevent unnecessary re-renders
 const EmptyState = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
@@ -18,7 +19,7 @@ const EmptyState = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
         </Button>
     </div>
 ));
-EmptyState.displayName = 'EmptyState';
+EmptyState.displayName = "EmptyState";
 
 // Memoize the header component
 const PageHeader = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
@@ -30,19 +31,19 @@ const PageHeader = memo(({ onCreateClick }: { onCreateClick: () => void }) => (
         </Button>
     </div>
 ));
-PageHeader.displayName = 'PageHeader';
+PageHeader.displayName = "PageHeader";
 
 export default function Workflows() {
     const { openModal } = useWorkflowStore();
-    const {
-        data: workflows = [],
-        isLoading,
-        error,
-    } = useWorkflows();
+    const { data: workflows = [], isLoading, isError, refetch } = useWorkflows();
 
     const handleCreateClick = () => {
         openModal();
     };
+
+    const handleRetry = useCallback(() => {
+        refetch();
+    }, [refetch]);
 
     // Render page content based on loading/error state
     const renderContent = () => {
@@ -50,12 +51,18 @@ export default function Workflows() {
             return <WorkflowListSkeleton />;
         }
 
-        if (error) {
+        if (isError) {
             return (
-                <div className="p-6 rounded-lg border border-destructive bg-destructive/10 text-destructive">
-                    <h2 className="text-lg font-semibold mb-2">Error</h2>
-                    <p>{error.message || 'Failed to load workflows'}</p>
-                </div>
+                <WorkflowError
+                    message="Unable to fetch workflow data. The server returned an invalid response."
+                    errorCode="ERR_FETCH_FAILED"
+                    retry={handleRetry}
+                    suggestions={[
+                        "Check your internet connection",
+                        "Verify that the API endpoint is correct",
+                        "Contact support if the problem persists",
+                    ]}
+                />
             );
         }
 
@@ -67,12 +74,10 @@ export default function Workflows() {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-8">
             <PageHeader onCreateClick={handleCreateClick} />
-            
-            <div className="space-y-4">
-                {renderContent()}
-            </div>
+
+            <div className="space-y-4">{renderContent()}</div>
 
             <WorkflowModal />
         </div>

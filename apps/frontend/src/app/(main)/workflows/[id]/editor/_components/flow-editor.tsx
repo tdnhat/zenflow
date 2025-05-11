@@ -253,8 +253,8 @@ const Flow = () => {
     const { saveWorkflowData, isSaving } = useSaveWorkflow(workflowId);
 
     return (
-        <div className="w-full h-full">
-            <div className="w-full h-full" ref={reactFlowWrapper}>
+        <div className="react-flow-wrapper">
+            <div className="react-flow-wrapper" ref={reactFlowWrapper}>
                 <ReactFlow
                     nodes={nodes}
                     edges={edges}
@@ -266,7 +266,6 @@ const Flow = () => {
                     nodeTypes={nodeTypes}
                     fitView
                     deleteKeyCode={null} // Disable built-in delete to use our custom implementation
-                    className="w-full h-full"
                 >
                     <MiniMap 
                         zoomable 
@@ -308,7 +307,9 @@ const Flow = () => {
 export const FlowEditor = () => {
     return (
         <ReactFlowProvider>
-            <Flow />
+            <div className="react-flow-wrapper">
+                <Flow />
+            </div>
         </ReactFlowProvider>
     );
 };

@@ -1,6 +1,6 @@
 using Carter;
-using Modules.User.Infrastructure;
-using Modules.Workflow.Infrastructure;
+using Modules.User.Infrastructure.Extensions;
+using Modules.Workflow.Infrastructure.Extensions;
 using ZenFlow.Shared.Extensions;
 using ZenFlow.Shared.Infrastructure;
 

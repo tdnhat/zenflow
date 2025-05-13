@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Modules.Workflow.Data;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
+using Modules.Workflow.Infrastructure.Persistence;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;

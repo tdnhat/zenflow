@@ -2,12 +2,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflows
 {
-    public class GetWorkflowsHandler : IRequestHandler<GetWorkflowsQuery, List<WorkflowDto>>
+    public class GetWorkflowsHandler : IRequestHandler<GetWorkflowsQuery, List<WorkflowResponse>>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -23,7 +23,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
             _logger = logger;
         }
 
-        public async Task<List<WorkflowDto>> Handle(GetWorkflowsQuery request, CancellationToken cancellationToken)
+        public async Task<List<WorkflowResponse>> Handle(GetWorkflowsQuery request, CancellationToken cancellationToken)
         {
             // Get the current user's ID
             var userId = _currentUser.UserId;
@@ -35,7 +35,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflows
 
             // Map entity results to DTOs
             var workflowDtos = workflows.Select(w =>
-                new WorkflowDto(
+                new WorkflowResponse(
                     w.Id, 
                     w.Name,
                     w.Description,

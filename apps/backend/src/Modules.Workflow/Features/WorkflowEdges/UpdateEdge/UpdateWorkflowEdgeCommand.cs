@@ -1,9 +1,9 @@
 ﻿using MediatR;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 
 namespace Modules.Workflow.Features.WorkflowEdges.UpdateEdge
 {
-    public class UpdateWorkflowEdgeCommand : IRequest<WorkflowEdgeDto?>
+    public class UpdateWorkflowEdgeCommand : IRequest<WorkflowEdgeResponse?>
     {
         public Guid EdgeId { get; set; }
         public Guid WorkflowId { get; set; }

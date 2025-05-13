@@ -2,12 +2,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflowById
 {
-    public class GetWorkflowByIdHandler : IRequestHandler<GetWorkflowByIdQuery, WorkflowDetailDto?>
+    public class GetWorkflowByIdHandler : IRequestHandler<GetWorkflowByIdQuery, WorkflowDetailResponse?>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -23,7 +23,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
             _logger = logger;
         }
 
-        public async Task<WorkflowDetailDto?> Handle(GetWorkflowByIdQuery request, CancellationToken cancellationToken)
+        public async Task<WorkflowDetailResponse?> Handle(GetWorkflowByIdQuery request, CancellationToken cancellationToken)
         {
             var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.Id, cancellationToken);
 
@@ -43,14 +43,14 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
 
             _logger.LogInformation("Retrieved workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDetailDto(
+            return new WorkflowDetailResponse(
                 workflow.Id,
                 workflow.Name,
                 workflow.Description,
                 workflow.Status.ToStringValue(),
                 workflow.CreatedAt,
                 workflow.LastModifiedAt,
-                workflow.Nodes.Select(n => new WorkflowNodeDto(
+                workflow.Nodes.Select(n => new WorkflowNodeResponse(
                     n.Id,
                     n.NodeType,
                     n.NodeKind,
@@ -58,7 +58,7 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
                     n.X,
                     n.Y,
                     n.ConfigJson)),
-                workflow.Edges.Select(e => new WorkflowEdgeDto(
+                workflow.Edges.Select(e => new WorkflowEdgeResponse(
                     e.Id,
                     e.SourceNodeId,
                     e.TargetNodeId,

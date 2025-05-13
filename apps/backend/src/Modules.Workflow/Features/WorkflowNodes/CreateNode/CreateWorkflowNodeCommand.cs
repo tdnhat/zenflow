@@ -1,5 +1,4 @@
 using MediatR;
-using Modules.Workflow.Dtos;
 
 namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
 {
@@ -10,5 +9,5 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
         float X, 
         float Y, 
         string Label, 
-        string ConfigJson) : IRequest<WorkflowNodeDto>;
+        string ConfigJson) : IRequest<CreateWorkflowNodeResponse>;
 }

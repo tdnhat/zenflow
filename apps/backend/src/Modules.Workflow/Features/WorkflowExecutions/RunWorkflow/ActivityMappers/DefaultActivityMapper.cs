@@ -2,6 +2,7 @@ using Elsa.Workflows;
 using Elsa.Workflows.Activities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Modules.Workflow.Infrastructure.Services.BrowserAutomation.Activities;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -85,7 +86,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappe
             var assemblies = new[] 
             { 
                 typeof(Sequence).Assembly, // Elsa core activities
-                typeof(Modules.Workflow.Services.BrowserAutomation.Activities.ManualTriggerActivity).Assembly // Our activities
+                typeof(ManualTriggerActivity).Assembly // Our activities
             };
             
             foreach (var assembly in assemblies)

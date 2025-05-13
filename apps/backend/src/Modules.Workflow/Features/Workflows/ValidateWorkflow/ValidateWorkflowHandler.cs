@@ -2,10 +2,10 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Services.Validation;
 using ZenFlow.Shared.Application.Auth;
 using System.Collections.Generic; // Added for HashSet and Queue
-using System.Linq; // Added for LINQ methods
+using System.Linq;
+using Modules.Workflow.Infrastructure.Services.Validation; // Added for LINQ methods
 
 namespace Modules.Workflow.Features.Workflows.ValidateWorkflow
 {

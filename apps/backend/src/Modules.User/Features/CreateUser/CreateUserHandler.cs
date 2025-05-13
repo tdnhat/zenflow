@@ -1,10 +1,9 @@
 ﻿using MediatR;
-using Modules.User.DDD.Interfaces;
-using Modules.User.Dtos;
+using Modules.User.Domain.Interfaces;
 
 namespace Modules.User.Features.CreateUser
 {
-    public class CreateUserHandler : IRequestHandler<CreateUserCommand, UserDto>
+    public class CreateUserHandler : IRequestHandler<CreateUserCommand, CreateUserResponse>
     {
         private readonly IUserRepository _userRepo;
         public CreateUserHandler(IUserRepository userRepo)
@@ -12,13 +11,13 @@ namespace Modules.User.Features.CreateUser
             _userRepo = userRepo;
         }
 
-        public async Task<UserDto> Handle(CreateUserCommand request, CancellationToken cancellationToken)
+        public async Task<CreateUserResponse> Handle(CreateUserCommand request, CancellationToken cancellationToken)
         {
             var existingUser = await _userRepo.GetByExternalIdAsync(request.ExternalId, cancellationToken);
 
             if (existingUser != null)
             {
-                return new UserDto
+                return new CreateUserResponse
                 (
                     existingUser.Id,
                     existingUser.Username,
@@ -26,10 +25,10 @@ namespace Modules.User.Features.CreateUser
                 );
             }
 
-            var user = DDD.Entities.User.Create(request.ExternalId, request.Username, request.Email);
+            var user = Domain.Entities.User.Create(request.ExternalId, request.Username, request.Email);
             await _userRepo.AddAsync(user, cancellationToken);
 
-            return new UserDto(user.Id, user.Username, user.Email);
+            return new CreateUserResponse(user.Id, user.Username, user.Email);
         }
     }
 }

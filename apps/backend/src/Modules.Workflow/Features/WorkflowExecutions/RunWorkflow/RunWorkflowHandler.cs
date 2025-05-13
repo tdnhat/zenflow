@@ -7,7 +7,6 @@ using Modules.Workflow.DDD.Entities;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
 using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
-using Modules.Workflow.Services.BrowserAutomation.Activities;
 using System.Text.Json;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow

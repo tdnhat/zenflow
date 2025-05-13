@@ -2,12 +2,12 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.Workflows.RestoreWorkflow
 {
-    public class RestoreWorkflowHandler : IRequestHandler<RestoreWorkflowCommand, WorkflowDto?>
+    public class RestoreWorkflowHandler : IRequestHandler<RestoreWorkflowCommand, WorkflowResponse?>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -23,7 +23,7 @@ namespace Modules.Workflow.Features.Workflows.RestoreWorkflow
             _logger = logger;
         }
 
-        public async Task<WorkflowDto?> Handle(RestoreWorkflowCommand request, CancellationToken cancellationToken)
+        public async Task<WorkflowResponse?> Handle(RestoreWorkflowCommand request, CancellationToken cancellationToken)
         {
             var workflow = await _workflowRepository.GetByIdAsync(request.Id, cancellationToken);
 
@@ -49,7 +49,7 @@ namespace Modules.Workflow.Features.Workflows.RestoreWorkflow
 
             _logger.LogInformation("Restored workflow {WorkflowId} for user {UserId}", workflow.Id, _currentUser.UserId);
 
-            return new WorkflowDto(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue(), workflow.CreatedAt, workflow.LastModifiedAt);
+            return new WorkflowResponse(workflow.Id, workflow.Name, workflow.Description, workflow.Status.ToStringValue(), workflow.CreatedAt, workflow.LastModifiedAt);
         }
     }
 }

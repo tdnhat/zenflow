@@ -1,12 +1,11 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using Modules.User.DDD.Interfaces;
-using Modules.User.Dtos;
+using Modules.User.Domain.Interfaces;
 using Modules.User.Infrastructure.Exceptions;
 
 namespace Modules.User.Features.UpdateUserById;
 
-public class UpdateUserByIdHandler : IRequestHandler<UpdateUserByIdCommand, UserDto?>
+public class UpdateUserByIdHandler : IRequestHandler<UpdateUserByIdCommand, UpdateUserResponse?>
 {
     private readonly IKeycloakAdminService _keycloak;
     private readonly IUserRepository _userRepository;
@@ -22,7 +21,7 @@ public class UpdateUserByIdHandler : IRequestHandler<UpdateUserByIdCommand, User
         _logger = logger;
     }
 
-    public async Task<UserDto?> Handle(UpdateUserByIdCommand request, CancellationToken cancellationToken)
+    public async Task<UpdateUserResponse?> Handle(UpdateUserByIdCommand request, CancellationToken cancellationToken)
     {
         // Find user in our database
         var user = await _userRepository.GetByIdAsync(request.Id, cancellationToken);
@@ -59,7 +58,7 @@ public class UpdateUserByIdHandler : IRequestHandler<UpdateUserByIdCommand, User
             await _userRepository.UpdateAsync(user, cancellationToken);
 
             // Return updated user details
-            return new UserDto(user.Id, user.Username, user.Email);
+            return new UpdateUserResponse(user.Id, user.Username, user.Email);
         }
         catch (KeycloakApiException ex)
         {

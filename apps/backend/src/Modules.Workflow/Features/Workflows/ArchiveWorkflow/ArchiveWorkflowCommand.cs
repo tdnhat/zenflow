@@ -1,7 +1,7 @@
 using MediatR;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 
 namespace Modules.Workflow.Features.Workflows.ArchiveWorkflow
 {
-    public record ArchiveWorkflowCommand(Guid Id) : IRequest<WorkflowDto?>;
+    public record ArchiveWorkflowCommand(Guid Id) : IRequest<WorkflowResponse?>;
 }

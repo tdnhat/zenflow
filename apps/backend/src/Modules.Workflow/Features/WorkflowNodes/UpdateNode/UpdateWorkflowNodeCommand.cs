@@ -1,5 +1,5 @@
 using MediatR;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 
 namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
 {
@@ -9,5 +9,5 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
         float X,
         float Y,
         string Label,
-        string ConfigJson) : IRequest<WorkflowNodeDto?>;
+        string ConfigJson) : IRequest<WorkflowNodeResponse?>;
 }

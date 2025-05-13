@@ -1,13 +1,12 @@
-﻿using Elsa.Alterations.Endpoints.Alterations.Get;
-using MediatR;
+﻿using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
 using Modules.Workflow.DDD.ValueObjects;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.WorkflowExecutions.Common;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
 {
-    public class GetWorkflowExecutionsHandler : IRequestHandler<GetWorkflowExecutionsQuery, List<WorkflowExecutionDto>>
+    public class GetWorkflowExecutionsHandler : IRequestHandler<GetWorkflowExecutionsQuery, List<WorkflowExecutionResponse>>
     {
         private readonly IWorkflowExecutionRepository _executionRepository;
         private readonly ILogger<GetWorkflowExecutionsHandler> _logger;
@@ -18,12 +17,12 @@ namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
             _logger = logger;
         }
 
-        public async Task<List<WorkflowExecutionDto>> Handle(GetWorkflowExecutionsQuery request, CancellationToken cancellationToken)
+        public async Task<List<WorkflowExecutionResponse>> Handle(GetWorkflowExecutionsQuery request, CancellationToken cancellationToken)
         {
             if (!Guid.TryParse(request.WorkflowId, out var workflowIdGuid))
             {
                 _logger.LogWarning("Invalid Workflow ID format: {WorkflowId}", request.WorkflowId);
-                return new List<WorkflowExecutionDto>();
+                return new List<WorkflowExecutionResponse>();
             }
 
             try
@@ -33,7 +32,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
                 var executions = await _executionRepository.GetByWorkflowIdAsync(workflowIdGuid, cancellationToken);
                 var totalCount = await _executionRepository.CountByWorkflowIdAsync(workflowIdGuid, cancellationToken);
 
-                var dtos = executions.Select(e => new WorkflowExecutionDto(
+                var dtos = executions.Select(e => new WorkflowExecutionResponse(
                     e.Id,
                     e.WorkflowId,
                     e.WorkflowVersion,
@@ -49,7 +48,7 @@ namespace Modules.Workflow.Features.WorkflowExecutions.GetWorkflowExecutions
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching executions for workflow ID {WorkflowId}: {ErrorMessage}", workflowIdGuid, ex.Message);
-                return new List<WorkflowExecutionDto>();
+                return new List<WorkflowExecutionResponse>();
             }
         }
     }

@@ -1,5 +1,5 @@
 ﻿using MediatR;
-using Modules.User.Dtos;
+using Modules.User.Features.CreateUser;
 
 namespace Modules.User.Features.UpdateUserById
 {
@@ -8,5 +8,5 @@ namespace Modules.User.Features.UpdateUserById
         string? Username = null,
         List<string>? Roles = null,
         bool? IsActive = null
-    ) : IRequest<UserDto?>;
+    ) : IRequest<UpdateUserResponse?>;
 }

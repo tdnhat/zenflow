@@ -1,6 +1,6 @@
 ﻿using MediatR;
 using Microsoft.Extensions.Logging;
-using Modules.User.DDD.Interfaces;
+using Modules.User.Domain.Interfaces;
 using Modules.User.Infrastructure.Exceptions;
 
 namespace Modules.User.Features.RestoreUserById

@@ -1,7 +1,7 @@
 using MediatR;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflowById
 {
-    public record GetWorkflowByIdQuery(Guid Id) : IRequest<WorkflowDetailDto?>;
+    public record GetWorkflowByIdQuery(Guid Id) : IRequest<WorkflowDetailResponse?>;
 }

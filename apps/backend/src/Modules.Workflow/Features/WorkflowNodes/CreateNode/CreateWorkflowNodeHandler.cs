@@ -1,12 +1,11 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Dtos;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
 {
-    public class CreateWorkflowNodeHandler : IRequestHandler<CreateWorkflowNodeCommand, WorkflowNodeDto>
+    public class CreateWorkflowNodeHandler : IRequestHandler<CreateWorkflowNodeCommand, CreateWorkflowNodeResponse>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -22,7 +21,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
             _logger = logger;
         }
 
-        public async Task<WorkflowNodeDto> Handle(CreateWorkflowNodeCommand request, CancellationToken cancellationToken)
+        public async Task<CreateWorkflowNodeResponse> Handle(CreateWorkflowNodeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
             var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
@@ -58,15 +57,14 @@ namespace Modules.Workflow.Features.WorkflowNodes.CreateNode
             _logger.LogInformation("Node {NodeId} created in workflow {WorkflowId} by user {UserId}", 
                 node.Id, node.WorkflowId, _currentUser.UserId);
 
-            return new WorkflowNodeDto(
+            return new CreateWorkflowNodeResponse(
                 node.Id,
                 node.NodeType,
                 node.NodeKind,
                 node.Label,
                 node.X,
                 node.Y,
-                node.ConfigJson
-            );
+                node.ConfigJson);
         }
     }
 }

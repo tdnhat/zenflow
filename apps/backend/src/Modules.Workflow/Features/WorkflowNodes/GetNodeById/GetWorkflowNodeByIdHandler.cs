@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.WorkflowNodes.GetNodeById
 {
-    public class GetWorkflowNodeByIdHandler : IRequestHandler<GetWorkflowNodeByIdQuery, WorkflowNodeDto?>
+    public class GetWorkflowNodeByIdHandler : IRequestHandler<GetWorkflowNodeByIdQuery, WorkflowNodeResponse?>
     {
         private readonly IWorkflowNodeRepository _nodeRepository;
         private readonly IWorkflowRepository _workflowRepository;
@@ -25,7 +25,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.GetNodeById
             _logger = logger;
         }
 
-        public async Task<WorkflowNodeDto?> Handle(GetWorkflowNodeByIdQuery request, CancellationToken cancellationToken)
+        public async Task<WorkflowNodeResponse?> Handle(GetWorkflowNodeByIdQuery request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
             var workflow = await _workflowRepository.GetByIdAsync(request.WorkflowId, cancellationToken);
@@ -63,7 +63,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.GetNodeById
 
             _logger.LogInformation("Retrieved node {NodeId} for workflow {WorkflowId}", node.Id, node.WorkflowId);
             
-            return new WorkflowNodeDto(
+            return new WorkflowNodeResponse(
                 node.Id,
                 node.NodeType,
                 node.NodeKind,

@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.WorkflowEdges.UpdateEdge
 {
-    public class UpdateWorkflowEdgeHandler : IRequestHandler<UpdateWorkflowEdgeCommand, WorkflowEdgeDto?>
+    public class UpdateWorkflowEdgeHandler : IRequestHandler<UpdateWorkflowEdgeCommand, WorkflowEdgeResponse?>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -22,7 +22,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.UpdateEdge
             _logger = logger;
         }
 
-        public async Task<WorkflowEdgeDto?> Handle(UpdateWorkflowEdgeCommand request, CancellationToken cancellationToken)
+        public async Task<WorkflowEdgeResponse?> Handle(UpdateWorkflowEdgeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
             var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
@@ -68,7 +68,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.UpdateEdge
             _logger.LogInformation("Edge {EdgeId} updated in workflow {WorkflowId} by user {UserId}", 
                 edge.Id, edge.WorkflowId, _currentUser.UserId);
 
-            return new WorkflowEdgeDto(
+            return new WorkflowEdgeResponse(
                 edge.Id,
                 edge.SourceNodeId,
                 edge.TargetNodeId,

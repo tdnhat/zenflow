@@ -1,5 +1,5 @@
 using MediatR;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.WorkflowEdges.UpdateEdge;
 
 namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
 {
@@ -11,5 +11,5 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
         string EdgeType,
         string ConditionJson,
         string SourceHandle,
-        string TargetHandle) : IRequest<WorkflowEdgeDto>;
+        string TargetHandle) : IRequest<UpdateWorkflowEdgeResponse>;
 }

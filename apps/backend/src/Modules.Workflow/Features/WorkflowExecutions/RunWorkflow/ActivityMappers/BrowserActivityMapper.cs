@@ -1,7 +1,7 @@
 using Elsa.Workflows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Modules.Workflow.Services.BrowserAutomation.Activities;
+using Modules.Workflow.Infrastructure.Services.BrowserAutomation.Activities;
 
 namespace Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers
 {

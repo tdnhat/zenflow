@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.Workflows.Common;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
 {
-    public class UpdateWorkflowNodeHandler : IRequestHandler<UpdateWorkflowNodeCommand, WorkflowNodeDto?>
+    public class UpdateWorkflowNodeHandler : IRequestHandler<UpdateWorkflowNodeCommand, WorkflowNodeResponse?>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -22,7 +22,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
             _logger = logger;
         }
 
-        public async Task<WorkflowNodeDto?> Handle(UpdateWorkflowNodeCommand request, CancellationToken cancellationToken)
+        public async Task<WorkflowNodeResponse?> Handle(UpdateWorkflowNodeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
             var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
@@ -61,7 +61,7 @@ namespace Modules.Workflow.Features.WorkflowNodes.UpdateNode
             _logger.LogInformation("Node {NodeId} updated in workflow {WorkflowId} by user {UserId}", 
                 node.Id, node.WorkflowId, _currentUser.UserId);
 
-            return new WorkflowNodeDto(
+            return new WorkflowNodeResponse(
                 node.Id,
                 node.NodeType,
                 node.NodeKind,

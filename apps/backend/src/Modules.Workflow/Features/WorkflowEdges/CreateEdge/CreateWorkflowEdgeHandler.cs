@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Dtos;
+using Modules.Workflow.Features.WorkflowEdges.UpdateEdge;
 using ZenFlow.Shared.Application.Auth;
 
 namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
 {
-    public class CreateWorkflowEdgeHandler : IRequestHandler<CreateWorkflowEdgeCommand, WorkflowEdgeDto>
+    public class CreateWorkflowEdgeHandler : IRequestHandler<CreateWorkflowEdgeCommand, UpdateWorkflowEdgeResponse>
     {
         private readonly IWorkflowRepository _workflowRepository;
         private readonly ICurrentUserService _currentUser;
@@ -22,7 +22,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
             _logger = logger;
         }
 
-        public async Task<WorkflowEdgeDto> Handle(CreateWorkflowEdgeCommand request, CancellationToken cancellationToken)
+        public async Task<UpdateWorkflowEdgeResponse> Handle(CreateWorkflowEdgeCommand request, CancellationToken cancellationToken)
         {
             // Verify the workflow exists and belongs to the current user
             var workflow = await _workflowRepository.GetByIdWithNodesAndEdgesAsync(request.WorkflowId, cancellationToken);
@@ -60,7 +60,7 @@ namespace Modules.Workflow.Features.WorkflowEdges.CreateEdge
             _logger.LogInformation("Edge {EdgeId} created between nodes {SourceNodeId} and {TargetNodeId} in workflow {WorkflowId} by user {UserId}", 
                 edge.Id, edge.SourceNodeId, edge.TargetNodeId, edge.WorkflowId, _currentUser.UserId);
 
-            return new WorkflowEdgeDto(
+            return new UpdateWorkflowEdgeResponse(
                 edge.Id,
                 edge.SourceNodeId,
                 edge.TargetNodeId,

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { PanelRightClose, PanelRightOpen, Play, Save } from "lucide-react";
+import { PanelRightClose, PanelRightOpen, Play } from "lucide-react";
 
 interface FlowToolbarProps {
     name: string;
@@ -14,9 +14,6 @@ export const FlowToolbar = ({
     sidebarOpen,
     setSidebarOpen,
 }: FlowToolbarProps) => {
-    const handleSave = () => {
-        console.log("Saving flow");
-    };
     return (
         <div className="h-16 p-4 border-b flex items-center justify-between">
             <div>
@@ -26,8 +23,13 @@ export const FlowToolbar = ({
             </div>
             {/* Sidebar toggle button */}
             <div className="flex items-center gap-2">
+                <Button size="sm" onClick={onRun}>
+                    <Play className="h-4 w-4 mr-2" />
+                    Run
+                </Button>
                 <Button
-                    variant="outline" size="sm"
+                    variant="outline"
+                    size="sm"
                     onClick={() => setSidebarOpen(!sidebarOpen)}
                 >
                     {sidebarOpen ? (
@@ -35,14 +37,6 @@ export const FlowToolbar = ({
                     ) : (
                         <PanelRightOpen className="h-4 w-4" />
                     )}
-                </Button>
-                <Button variant="outline" size="sm" onClick={handleSave}>
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Flow
-                </Button>
-                <Button size="sm" onClick={onRun}>
-                    <Play className="h-4 w-4 mr-2" />
-                    Run
                 </Button>
             </div>
         </div>

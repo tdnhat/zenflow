@@ -7,11 +7,14 @@ namespace Modules.Workflow.DDD.Entities
     {
         public Guid WorkflowId { get; private set; }
         public string NodeType { get; private set; } = default!;
-        public string NodeKind { get; private set; } = "ACTION"; // Default to ACTION for backward compatibility
+        public string ActivityType { get; private set; } = default!;
         public string Label { get; private set; } = string.Empty;
         public float X { get; private set; }
         public float Y { get; private set; }
-        public string ConfigJson { get; private set; } = "{}";
+        public string ActivityPropertiesJson { get; private set; } = "{}"; // JSON string for activity properties
+        public string BackendIntegrationJson { get; private set; } = "{}";
+        public string InputMappingsJson { get; private set; } = "[]";
+        public string OutputMappingsJson { get; private set; } = "[]";
 
         // Navigation property for the Aggregate Root
         public Workflow? Workflow { get; private set; }
@@ -19,46 +22,72 @@ namespace Modules.Workflow.DDD.Entities
         // Parameterless constructor for EF Core
         private WorkflowNode() { }
 
-        internal static WorkflowNode Create(Guid workflowId, string nodeType, string nodeKind, float x, float y, string label, string configJson)
+        internal static WorkflowNode Create(
+            Guid workflowId,
+            string nodeType,
+            string activityType,
+            float x,
+            float y,
+            string label,
+            string activityPropertiesJson,
+            string backendIntegrationJson = "{}",
+            string inputMappingsJson = "[]",
+            string outputMappingsJson = "[]")
         {
-            var node = new WorkflowNode
+            return new WorkflowNode
             {
                 Id = Guid.NewGuid(),
                 WorkflowId = workflowId,
                 NodeType = nodeType,
-                NodeKind = nodeKind,
+                ActivityType = activityType,
                 Label = label,
                 X = x,
                 Y = y,
-                ConfigJson = configJson
+                ActivityPropertiesJson = activityPropertiesJson,
+                BackendIntegrationJson = backendIntegrationJson,
+                InputMappingsJson = inputMappingsJson,
+                OutputMappingsJson = outputMappingsJson
             };
-
-            return node;
         }
 
-        // For backward compatibility
-        internal static WorkflowNode Create(Guid workflowId, string nodeType, float x, float y, string label, string configJson)
-        {
-            return Create(workflowId, nodeType, "ACTION", x, y, label, configJson);
-        }
-
-        internal void Update(float x, float y, string label, string configJson)
+        internal void Update(
+            float x,
+            float y,
+            string label,
+            string activityPropertiesJson,
+            string backendIntegrationJson = "{}",
+            string inputMappingsJson = "[]",
+            string outputMappingsJson = "[]")
         {
             X = x;
             Y = y;
             Label = label;
-            ConfigJson = configJson;
+            ActivityPropertiesJson = activityPropertiesJson;
+            BackendIntegrationJson = backendIntegrationJson;
+            InputMappingsJson = inputMappingsJson;
+            OutputMappingsJson = outputMappingsJson;
         }
 
-        // Enhanced update method for bulk operations, including all node properties
-        internal void Update(string nodeType, string nodeKind, float x, float y, string label, string configJson)
+        internal void Update(
+            string nodeType,
+            string activityType,
+            float x,
+            float y,
+            string label,
+            string activityPropertiesJson,
+            string backendIntegrationJson = "{}",
+            string inputMappingsJson = "[]",
+            string outputMappingsJson = "[]")
         {
             NodeType = nodeType;
-            NodeKind = nodeKind;
+            ActivityType = activityType;
             X = x;
             Y = y;
             Label = label;
-            ConfigJson = configJson;
+            ActivityPropertiesJson = activityPropertiesJson;
+            BackendIntegrationJson = backendIntegrationJson;
+            InputMappingsJson = inputMappingsJson;
+            OutputMappingsJson = outputMappingsJson;
         }
     }
 }

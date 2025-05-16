@@ -17,14 +17,10 @@ namespace Modules.Workflow.DDD.Entities
         public Guid? ErrorNodeId { get; private set; }
         public string? ExternalWorkflowId { get; private set; }
         public string? OutputData { get; private set; }
-        
-        // Navigation property
+
         public Workflow? Workflow { get; private set; }
-        
-        // Collection of node executions
         public List<NodeExecution> NodeExecutions { get; private set; } = new();
 
-        // Parameterless constructor for EF Core
         private WorkflowExecution() { }
 
         public static WorkflowExecution Create(Guid workflowId, int workflowVersion = 1)
@@ -37,10 +33,7 @@ namespace Modules.Workflow.DDD.Entities
                 Status = WorkflowExecutionStatus.PENDING,
                 StartedAt = DateTime.UtcNow
             };
-
-            // Raise domain event
             execution.AddDomainEvent(new WorkflowExecutionCreatedEvent(execution.Id, execution.WorkflowId));
-
             return execution;
         }
 
@@ -50,10 +43,7 @@ namespace Modules.Workflow.DDD.Entities
             {
                 throw new InvalidOperationException($"Cannot start workflow execution in {Status.ToStringValue()} status");
             }
-
             Status = WorkflowExecutionStatus.RUNNING;
-            
-            // Raise domain event
             AddDomainEvent(new WorkflowExecutionStartedEvent(Id, WorkflowId));
         }
 
@@ -63,16 +53,9 @@ namespace Modules.Workflow.DDD.Entities
             {
                 throw new InvalidOperationException($"Cannot complete workflow execution in {Status.ToStringValue()} status");
             }
-
             Status = WorkflowExecutionStatus.COMPLETED;
             CompletedAt = DateTime.UtcNow;
-            
-            if (outputData != null)
-            {
-                OutputData = outputData;
-            }
-            
-            // Raise domain event
+            if (outputData != null) OutputData = outputData;
             AddDomainEvent(new WorkflowExecutionCompletedEvent(Id, WorkflowId));
         }
 
@@ -83,8 +66,6 @@ namespace Modules.Workflow.DDD.Entities
             ErrorStack = errorStack;
             ErrorNodeId = errorNodeId;
             CompletedAt = DateTime.UtcNow;
-            
-            // Raise domain event
             AddDomainEvent(new WorkflowExecutionFailedEvent(Id, WorkflowId, errorMessage ?? "Unknown error"));
         }
 
@@ -104,19 +85,14 @@ namespace Modules.Workflow.DDD.Entities
             {
                 throw new InvalidOperationException($"Cannot cancel workflow execution in {Status.ToStringValue()} status");
             }
-
             Status = WorkflowExecutionStatus.CANCELLED;
             CompletedAt = DateTime.UtcNow;
             ErrorMessage = reason ?? "Cancelled by user";
-            
-            // Cancel all running node executions
-            var runningNodes = NodeExecutions.Where(n => n.Status == NodeExecutionStatus.RUNNING).ToList();
+            var runningNodes = NodeExecutions.Where(n => n.Status == NodeExecutionStatus.Running).ToList();
             foreach (var nodeExecution in runningNodes)
             {
                 nodeExecution.Fail("Cancelled due to workflow execution cancellation");
             }
-            
-            // Raise domain event
             AddDomainEvent(new WorkflowExecutionCancelledEvent(Id, WorkflowId));
         }
     }

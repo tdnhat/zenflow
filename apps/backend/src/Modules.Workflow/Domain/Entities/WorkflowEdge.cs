@@ -8,15 +8,13 @@ namespace Modules.Workflow.DDD.Entities
         public Guid SourceNodeId { get; private set; }
         public Guid TargetNodeId { get; private set; }
         public string Label { get; private set; } = string.Empty;
-        public string EdgeType { get; private set; } = "default"; // success, failure, condition
+        public string EdgeType { get; private set; } = "default";
         public string ConditionJson { get; private set; } = "{}";
-        public string SourceHandle { get; private set; } = string.Empty; // For nodes with multiple outputs
-        public string TargetHandle { get; private set; } = string.Empty; // For nodes with multiple inputs
+        public string SourceHandle { get; private set; } = string.Empty;
+        public string TargetHandle { get; private set; } = string.Empty;
 
-        // Navigation property for the Aggregate Root
         public Workflow? Workflow { get; private set; }
 
-        // Parameterless constructor for EF Core
         private WorkflowEdge() { }
 
         internal static WorkflowEdge Create(
@@ -43,7 +41,6 @@ namespace Modules.Workflow.DDD.Entities
             };
         }
 
-        // For backward compatibility
         internal static WorkflowEdge Create(Guid workflowId, Guid sourceNodeId, Guid targetNodeId, string label, string conditionJson)
         {
             return Create(workflowId, sourceNodeId, targetNodeId, label, "default", conditionJson);

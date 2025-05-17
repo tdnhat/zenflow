@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Modules.Workflow.DDD.Entities;
+using Modules.Workflow.Domain.Entities;
 
 namespace Modules.Workflow.Infrastructure.Persistence.Configurations
 {
@@ -9,44 +9,42 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<NodeExecution> builder)
         {
             builder.ToTable("NodeExecutions");
-
-            builder.HasKey(e => e.Id);
-
-            builder.Property(e => e.WorkflowExecutionId)
-                .IsRequired();
-
-            builder.Property(e => e.NodeId)
-                .IsRequired();
-
-            builder.Property(e => e.Status)
+            
+            builder.HasKey(n => new { n.NodeId, n.WorkflowInstanceId });
+            
+            builder.Property(n => n.NodeId)
                 .IsRequired()
-                .HasMaxLength(20);
-
-            builder.Property(e => e.StartedAt);
-
-            builder.Property(e => e.CompletedAt);
-
-            builder.Property(e => e.InputJson)
-                .HasColumnType("jsonb");
-
-            builder.Property(e => e.OutputJson)
-                .HasColumnType("jsonb");
-
-            builder.Property(e => e.Error);
-
-            builder.Property(e => e.DurationMs);
-
-            // Configure relationship to WorkflowExecution
-            builder.HasOne(e => e.WorkflowExecution)
-                .WithMany(w => w.NodeExecutions)
-                .HasForeignKey(e => e.WorkflowExecutionId)
+                .HasMaxLength(50);
+                
+            builder.Property(n => n.ActivityType)
+                .IsRequired()
+                .HasMaxLength(200);
+                
+            builder.Property(n => n.Status)
+                .IsRequired()
+                .HasConversion<string>();
+                
+            builder.Property(n => n.StartedAt);
+            
+            builder.Property(n => n.CompletedAt);
+            
+            builder.Property(n => n.Error)
+                .HasMaxLength(4000);
+                
+            builder.Property(n => n.InputDataJson)
+                .HasColumnType("nvarchar(max)");
+                
+            builder.Property(n => n.OutputDataJson)
+                .HasColumnType("nvarchar(max)");
+                
+            builder.Property(n => n.LogsJson)
+                .HasColumnType("nvarchar(max)");
+            
+            // Configure relationships
+            builder.HasOne<WorkflowInstance>()
+                .WithMany(i => i.NodeExecutions)
+                .HasForeignKey(n => n.WorkflowInstanceId)
                 .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure relationship to WorkflowNode
-            builder.HasOne(e => e.Node)
-                .WithMany()
-                .HasForeignKey(e => e.NodeId)
-                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

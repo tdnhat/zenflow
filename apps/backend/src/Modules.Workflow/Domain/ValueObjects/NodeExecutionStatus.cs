@@ -1,4 +1,4 @@
-namespace Modules.Workflow.DDD.ValueObjects
+namespace Modules.Workflow.Domain.ValueObjects
 {
     public enum NodeExecutionStatus
     {

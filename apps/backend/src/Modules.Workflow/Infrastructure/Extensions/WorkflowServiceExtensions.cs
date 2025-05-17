@@ -1,9 +1,10 @@
-using Elsa.Extensions;
 using Microsoft.Extensions.DependencyInjection;
-using Modules.Workflow.DDD.Interfaces;
-using Modules.Workflow.Features.WorkflowExecutions.RunWorkflow.ActivityMappers;
-using Modules.Workflow.Infrastructure.Services.BrowserAutomation;
-using Modules.Workflow.Infrastructure.Services.BrowserAutomation.Activities;
+using Microsoft.Playwright;
+using Modules.Workflow.Domain.Interfaces.Core;
+using Modules.Workflow.Infrastructure.Services.Activities;
+using Modules.Workflow.Infrastructure.Services.AI;
+using Modules.Workflow.Infrastructure.Services.Email;
+using Modules.Workflow.Infrastructure.Services.Playwright;
 
 namespace Modules.Workflow.Infrastructure.Extensions
 {
@@ -11,36 +12,20 @@ namespace Modules.Workflow.Infrastructure.Extensions
     {
         public static IServiceCollection AddWorkflowExecutionServices(this IServiceCollection services, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
-            // Register browser automation services
-            services.AddSingleton<IBrowserAutomation, BrowserAutomation>();
-            services.AddSingleton<IBrowserSessionManager, BrowserSessionManager>();
-            services.AddScoped<IWorkflowLifecycleHandler, WorkflowCleanupHandler>();
+            // Register Playwright services
+            services.AddSingleton<IPlaywright>(provider => 
+                Playwright.CreateAsync().GetAwaiter().GetResult());
+            services.AddSingleton<IPlaywrightService, PlaywrightService>();
+            services.AddScoped<PlaywrightActivityExecutor>();
             
-            // Register activity mappers
-            services.AddScoped<IActivityMapperFactory, ActivityMapperFactory>();
-            services.AddScoped<IActivityMapper, BrowserActivityMapper>();
-            services.AddScoped<IActivityMapper, DefaultActivityMapper>();
-
-            // Add Elsa services
-            services.AddElsa(elsa =>
-            {
-                // Enable HTTP activity for API integration scenarios
-                elsa.UseHttp();
-
-                // Enable JavaScript support for expressions
-                elsa.UseJavaScript();
-
-                // Register browser automation activities
-                elsa.AddActivity<NavigateActivity>()
-                   .AddActivity<ClickActivity>()
-                   .AddActivity<InputTextActivity>()
-                   .AddActivity<WaitForSelectorActivity>()
-                   .AddActivity<CrawlDataActivity>()
-                   .AddActivity<ScreenshotActivity>()
-                   .AddActivity<ManualTriggerActivity>();
-
-            });
-
+            // Register AI services
+            services.AddHttpClient<IAIService, AIService>();
+            services.AddScoped<AIActivityExecutor>();
+            
+            // Register Email services
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<EmailActivityExecutor>();
+            
             return services;
         }
     }

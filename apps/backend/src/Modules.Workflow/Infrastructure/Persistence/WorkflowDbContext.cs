@@ -1,9 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
-using Modules.Workflow.DDD.Entities;
-using System.Linq.Expressions;
-using ZenFlow.Shared.Domain;
+using Modules.Workflow.Domain.Entities;
 
 namespace Modules.Workflow.Infrastructure.Persistence
 {
@@ -37,12 +35,11 @@ namespace Modules.Workflow.Infrastructure.Persistence
         {
         }
 
-        public DbSet<DDD.Entities.Workflow> Workflows => Set<DDD.Entities.Workflow>();
-        public DbSet<WorkflowNode> WorkflowNodes => Set<WorkflowNode>();
-        public DbSet<WorkflowEdge> WorkflowEdges => Set<WorkflowEdge>();
-        public DbSet<WorkflowExecution> WorkflowExecutions => Set<WorkflowExecution>();
-        public DbSet<NodeExecution> NodeExecutions => Set<NodeExecution>();
-        public DbSet<WorkflowOutboxMessage> OutboxMessages => Set<WorkflowOutboxMessage>();
+        public DbSet<WorkflowDefinition> WorkflowDefinitions { get; set; }
+        public DbSet<WorkflowNode> WorkflowNodes { get; set; }
+        public DbSet<WorkflowEdge> WorkflowEdges { get; set; }
+        public DbSet<WorkflowInstance> WorkflowInstances { get; set; }
+        public DbSet<NodeExecution> NodeExecutions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,26 +48,26 @@ namespace Modules.Workflow.Infrastructure.Persistence
             // Configure the entity mappings
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(WorkflowDbContext).Assembly);
 
-            // Apply global filters for soft delete
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
-                {
-                    var parameter = Expression.Parameter(entityType.ClrType, "p");
-                    var propertyMethodInfo = typeof(EF).GetMethod(nameof(EF.Property))!
-                        .MakeGenericMethod(typeof(bool));
-                    var isDeletedProperty = Expression.Call(propertyMethodInfo,
-                        parameter,
-                        Expression.Constant(nameof(ISoftDelete.IsDeleted)));
-
-                    var notDeletedExpression = Expression.Not(isDeletedProperty);
-                    var lambda = Expression.Lambda(notDeletedExpression, parameter);
-
-                    modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
-                }
-            }
-
             base.OnModelCreating(modelBuilder);
+
+            // Apply global filters for soft delete
+            // foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            // {
+            //     if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
+            //     {
+            //         var parameter = Expression.Parameter(entityType.ClrType, "p");
+            //         var propertyMethodInfo = typeof(EF).GetMethod(nameof(EF.Property))!
+            //             .MakeGenericMethod(typeof(bool));
+            //         var isDeletedProperty = Expression.Call(propertyMethodInfo,
+            //             parameter,
+            //             Expression.Constant(nameof(ISoftDelete.IsDeleted)));
+
+            //         var notDeletedExpression = Expression.Not(isDeletedProperty);
+            //         var lambda = Expression.Lambda(notDeletedExpression, parameter);
+
+            //         modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            //     }
+            // }
         }
     }
 }

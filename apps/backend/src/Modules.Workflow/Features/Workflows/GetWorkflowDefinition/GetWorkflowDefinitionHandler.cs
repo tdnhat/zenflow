@@ -1,7 +1,9 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
+using Modules.Workflow.Domain.Entities;
 using Modules.Workflow.Domain.Interfaces.Core;
 using Modules.Workflow.Features.Workflows.Shared;
+using System.Text.Json;
 
 namespace Modules.Workflow.Features.Workflows.GetWorkflowById
 {
@@ -29,6 +31,54 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowById
             {
                 _logger.LogWarning("Workflow definition with ID {WorkflowId} not found", request.Id);
                 return null;
+            }
+
+            // Deserialize the JSON properties for each node
+            foreach (var node in workflow.Nodes)
+            {
+                // Deserialize ActivityProperties from JSON
+                if (!string.IsNullOrEmpty(node.ActivityPropertiesJson))
+                {
+                    node.ActivityProperties = JsonSerializer.Deserialize<Dictionary<string, object>>(
+                        node.ActivityPropertiesJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                }
+
+                // Deserialize InputMappings from JSON
+                if (!string.IsNullOrEmpty(node.InputMappingsJson))
+                {
+                    node.InputMappings = JsonSerializer.Deserialize<List<InputMapping>>(
+                        node.InputMappingsJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                }
+
+                // Deserialize OutputMappings from JSON
+                if (!string.IsNullOrEmpty(node.OutputMappingsJson))
+                {
+                    node.OutputMappings = JsonSerializer.Deserialize<List<OutputMapping>>(
+                        node.OutputMappingsJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                }
+
+                // Deserialize Position from JSON
+                if (!string.IsNullOrEmpty(node.PositionJson))
+                {
+                    node.Position = JsonSerializer.Deserialize<NodePosition>(
+                        node.PositionJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                }
+            }
+
+            // Deserialize the JSON properties for each edge
+            foreach (var edge in workflow.Edges)
+            {
+                // Deserialize Condition from JSON
+                if (!string.IsNullOrEmpty(edge.ConditionJson))
+                {
+                    edge.Condition = JsonSerializer.Deserialize<EdgeCondition>(
+                        edge.ConditionJson,
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
             }
 
             // Map domain entity to DTO

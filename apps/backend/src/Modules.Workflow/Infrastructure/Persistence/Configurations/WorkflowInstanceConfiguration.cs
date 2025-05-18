@@ -12,22 +12,30 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
             
             builder.HasKey(i => i.Id);
             
-            builder.Property(i => i.WorkflowDefinitionId)
-                .IsRequired();
-                
             builder.Property(i => i.Status)
                 .IsRequired()
-                .HasConversion<string>();
+                .HasMaxLength(50);
+                
+            builder.Property(i => i.Error)
+                .IsRequired()
+                .HasMaxLength(4000);
                 
             builder.Property(i => i.StartedAt);
             
             builder.Property(i => i.CompletedAt);
             
-            builder.Property(i => i.Error)
-                .HasMaxLength(4000);
-                
             builder.Property(i => i.VariablesJson)
-                .HasColumnType("nvarchar(max)");
+                .IsRequired();
+
+            builder.HasMany(i => i.NodeExecutions)
+                .WithOne(n => n.WorkflowInstance)
+                .HasForeignKey(n => n.WorkflowInstanceId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne(i => i.WorkflowDefinition)
+                .WithMany()
+                .HasForeignKey(i => i.WorkflowDefinitionId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

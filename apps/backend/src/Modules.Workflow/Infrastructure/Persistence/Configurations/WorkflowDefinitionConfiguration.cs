@@ -27,14 +27,14 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
                 
             builder.Property(w => w.UpdatedAt);
             
-            // Configure relationships
+            // Configure relationships - properly define the relationship with WorkflowId
             builder.HasMany(w => w.Nodes)
-                .WithOne()
+                .WithOne(n => n.Workflow)
                 .HasForeignKey(n => n.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
                 
             builder.HasMany(w => w.Edges)
-                .WithOne()
+                .WithOne(e => e.Workflow)
                 .HasForeignKey(e => e.WorkflowId)
                 .OnDelete(DeleteBehavior.Cascade);
         }

@@ -27,7 +27,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
 
         public async Task<Guid> StartWorkflowAsync(
             Guid workflowDefinitionId,
-            Dictionary<string, object> initialVariables = null,
+            Dictionary<string, object>? initialVariables = null,
             CancellationToken cancellationToken = default)
         {
             // Load the workflow definition
@@ -48,9 +48,9 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
             // Initialize node execution contexts
             foreach (var node in workflowDefinition.Nodes)
             {
-                executionContext.NodeExecutions[node.Id] = new NodeExecutionContext
+                executionContext.NodeExecutions[node.Id.ToString()] = new NodeExecutionContext
                 {
-                    NodeId = node.Id,
+                    NodeId = node.Id.ToString(),
                     ActivityType = node.ActivityType,
                     Status = WorkflowNodeStatus.NotStarted
                 };
@@ -60,15 +60,15 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
             await _instanceRepository.SaveAsync(executionContext, cancellationToken);
 
             // Start the workflow execution
-            await ExecuteWorkflowAsync(executionContext, null, cancellationToken);
+            await ExecuteWorkflowAsync(executionContext, Guid.Empty, cancellationToken);
 
             return workflowInstanceId;
         }
 
         public async Task ResumeWorkflowAsync(
             Guid workflowInstanceId,
-            string nodeId,
-            Dictionary<string, object> outputData = null,
+            Guid nodeId,
+            Dictionary<string, object>? outputData = null,
             CancellationToken cancellationToken = default)
         {
             // Load the workflow instance
@@ -81,7 +81,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
                 throw new InvalidOperationException($"Cannot resume workflow in state: {executionContext.Status}");
 
             // Check if the node exists
-            if (!executionContext.NodeExecutions.TryGetValue(nodeId, out var nodeContext))
+            if (!executionContext.NodeExecutions.TryGetValue(nodeId.ToString(), out var nodeContext))
                 throw new ArgumentException($"Node not found in workflow: {nodeId}");
 
             // Check if the node is in the correct state
@@ -150,7 +150,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
 
         private async Task ExecuteWorkflowAsync(
             WorkflowExecutionContext context,
-            string currentNodeId,
+            Guid currentNodeId,
             CancellationToken cancellationToken)
         {
             // Load the workflow definition
@@ -173,9 +173,9 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
             await _instanceRepository.SaveAsync(context, cancellationToken);
 
             // Determine the next nodes to execute
-            var nodesToExecute = new List<string>();
+            var nodesToExecute = new List<Guid>();
 
-            if (currentNodeId == null)
+            if (currentNodeId == Guid.Empty)
             {
                 // Starting the workflow - find nodes with no incoming edges
                 nodesToExecute.AddRange(FindStartNodes(workflowDefinition));
@@ -257,7 +257,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
         private async Task<ActivityExecutionResult> ExecuteNodeAsync(
             WorkflowExecutionContext context,
             WorkflowDefinition workflowDefinition,
-            string nodeId,
+            Guid nodeId,
             CancellationToken cancellationToken)
         {
             // Get the node from the workflow definition
@@ -266,7 +266,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
                 throw new ArgumentException($"Node not found in workflow definition: {nodeId}");
 
             // Get the node execution context
-            if (!context.NodeExecutions.TryGetValue(nodeId, out var nodeContext))
+            if (!context.NodeExecutions.TryGetValue(nodeId.ToString(), out var nodeContext))
                 throw new InvalidOperationException($"Node execution context not found: {nodeId}");
 
             // Skip if already completed or failed
@@ -329,7 +329,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
             return result;
         }
 
-        private List<string> FindStartNodes(WorkflowDefinition workflowDefinition)
+        private List<Guid> FindStartNodes(WorkflowDefinition workflowDefinition)
         {
             // Find nodes with no incoming edges
             var nodesWithIncomingEdges = workflowDefinition.Edges
@@ -343,7 +343,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
                 .ToList();
         }
 
-        private List<string> FindNextNodes(WorkflowDefinition workflowDefinition, string nodeId)
+        private List<Guid> FindNextNodes(WorkflowDefinition workflowDefinition, Guid nodeId)
         {
             // Find nodes connected by outgoing edges
             return workflowDefinition.Edges
@@ -355,7 +355,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
         private bool AreAllIncomingNodesCompleted(
             WorkflowExecutionContext context,
             WorkflowDefinition workflowDefinition,
-            string nodeId)
+            Guid nodeId)
         {
             // Find all nodes with edges pointing to this node
             var incomingNodeIds = workflowDefinition.Edges
@@ -365,14 +365,14 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
 
             // Check if all incoming nodes are completed
             return incomingNodeIds.All(id =>
-                context.NodeExecutions.TryGetValue(id, out var nodeContext) &&
+                context.NodeExecutions.TryGetValue(id.ToString(), out var nodeContext) &&
                 nodeContext.Status == WorkflowNodeStatus.Completed);
         }
 
         private Dictionary<string, object> PrepareInputData(
             WorkflowExecutionContext context,
             WorkflowDefinition workflowDefinition,
-            string nodeId)
+            Guid nodeId)
         {
             var inputData = new Dictionary<string, object>();
 
@@ -393,7 +393,7 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
             // Add outputs from source nodes based on input mappings
             foreach (var edge in incomingEdges)
             {
-                if (context.NodeExecutions.TryGetValue(edge.Source, out var sourceNodeContext) &&
+                if (context.NodeExecutions.TryGetValue(edge.Source.ToString(), out var sourceNodeContext) &&
                     sourceNodeContext.Status == WorkflowNodeStatus.Completed)
                 {
                     // Check if there are input mappings for this edge

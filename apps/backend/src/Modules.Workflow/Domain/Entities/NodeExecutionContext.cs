@@ -4,8 +4,8 @@ namespace Modules.Workflow.Domain.Core
 {
     public class NodeExecutionContext
     {
-        public string NodeId { get; set; }
-        public string ActivityType { get; set; }
+        public string NodeId { get; set; } = string.Empty;
+        public string ActivityType { get; set; } = string.Empty;
         public Dictionary<string, object> InputData { get; set; } = new();
         public Dictionary<string, object> OutputData { get; set; } = new();
         public WorkflowNodeStatus Status { get; set; }

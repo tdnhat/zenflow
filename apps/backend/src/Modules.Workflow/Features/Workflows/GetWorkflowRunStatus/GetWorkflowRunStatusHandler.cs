@@ -56,9 +56,8 @@ namespace Modules.Workflow.Features.Workflows.GetWorkflowRunStatus
                 StartedAt = context.StartedAt,
                 CompletedAt = context.CompletedAt,
                 Nodes = context.NodeExecutions.Values.Select(n => new NodeStatusDto
-                {
-                    NodeId = n.NodeId,
-                    Name = workflowDefinition.Nodes.FirstOrDefault(node => node.Id == n.NodeId)?.Name ?? n.NodeId,
+                {                    NodeId = n.NodeId,
+                    Name = workflowDefinition.Nodes.FirstOrDefault(node => node.Id.ToString() == n.NodeId)?.Name ?? n.NodeId,
                     ActivityType = n.ActivityType,
                     Status = n.Status.ToString(),
                     StartedAt = n.StartedAt,

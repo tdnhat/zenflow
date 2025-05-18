@@ -9,42 +9,45 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<NodeExecution> builder)
         {
             builder.ToTable("NodeExecutions");
-            
-            builder.HasKey(n => new { n.NodeId, n.WorkflowInstanceId });
-            
-            builder.Property(n => n.NodeId)
+
+            // Primary key
+            builder.HasKey(ne => new { ne.NodeId, ne.WorkflowInstanceId });
+
+            // Properties
+            builder.Property(ne => ne.NodeId)
                 .IsRequired()
                 .HasMaxLength(50);
-                
-            builder.Property(n => n.ActivityType)
+
+            builder.Property(ne => ne.ActivityType)
                 .IsRequired()
                 .HasMaxLength(200);
-                
-            builder.Property(n => n.Status)
+
+            builder.Property(ne => ne.Status)
                 .IsRequired()
-                .HasConversion<string>();
-                
-            builder.Property(n => n.StartedAt);
-            
-            builder.Property(n => n.CompletedAt);
-            
-            builder.Property(n => n.Error)
+                .HasMaxLength(50);
+
+            builder.Property(ne => ne.Error)
+                .IsRequired()
                 .HasMaxLength(4000);
-                
-            builder.Property(n => n.InputDataJson)
-                .HasColumnType("nvarchar(max)");
-                
-            builder.Property(n => n.OutputDataJson)
-                .HasColumnType("nvarchar(max)");
-                
-            builder.Property(n => n.LogsJson)
-                .HasColumnType("nvarchar(max)");
-            
-            // Configure relationships
-            builder.HasOne<WorkflowInstance>()
-                .WithMany(i => i.NodeExecutions)
-                .HasForeignKey(n => n.WorkflowInstanceId)
+
+            builder.Property(ne => ne.InputDataJson)
+                .IsRequired();
+
+            builder.Property(ne => ne.OutputDataJson)
+                .IsRequired();
+
+            builder.Property(ne => ne.LogsJson)
+                .IsRequired();
+
+            // Relationships - Fix the relationship to use proper property
+            builder.HasOne(ne => ne.WorkflowInstance)
+                .WithMany(wi => wi.NodeExecutions)
+                .HasForeignKey(ne => ne.WorkflowInstanceId)
                 .OnDelete(DeleteBehavior.Cascade);
+                
+            // Remove any shadow properties
+            builder.Metadata.FindNavigation(nameof(NodeExecution.WorkflowInstance))
+                .SetPropertyAccessMode(PropertyAccessMode.Property);
         }
     }
 }

@@ -8,112 +8,115 @@ namespace Modules.Workflow.Domain.Entities
     {
         [Key]
         public Guid Id { get; set; }
-        
+
         [Required]
         [MaxLength(100)]
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = string.Empty;
+
         [MaxLength(500)]
-        public string Description { get; set; }
-        
+        public string Description { get; set; } = string.Empty;
+
         public int Version { get; set; } = 1;
-        
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         public DateTime? UpdatedAt { get; set; }
-        
+
         [JsonIgnore]
         public virtual ICollection<WorkflowNode> Nodes { get; set; } = new List<WorkflowNode>();
-        
+
         [JsonIgnore]
         public virtual ICollection<WorkflowEdge> Edges { get; set; } = new List<WorkflowEdge>();
     }
-    
+
     public class WorkflowNode
     {
         [Key]
-        public string Id { get; set; }
-        
+        [Column(Order = 1)]
         public Guid WorkflowId { get; set; }
-        
+
+        [Key]
+        [Column(Order = 2)]
+        public Guid Id { get; set; }
+
         [ForeignKey("WorkflowId")]
         [JsonIgnore]
-        public virtual WorkflowDefinition Workflow { get; set; }
-        
+        public virtual WorkflowDefinition? Workflow { get; set; }
+
         [MaxLength(100)]
-        public string Name { get; set; }
-        
+        public string Name { get; set; } = string.Empty;
+
         [Required]
         [MaxLength(200)]
-        public string ActivityType { get; set; }
-        
+        public string ActivityType { get; set; } = string.Empty;
+
         [Column(TypeName = "json")]
-        public string ActivityPropertiesJson { get; set; }
-        
+        public string ActivityPropertiesJson { get; set; } = "{}";
+
         [Column(TypeName = "json")]
-        public string InputMappingsJson { get; set; }
-        
+        public string InputMappingsJson { get; set; } = "[]";
+
         [Column(TypeName = "json")]
-        public string OutputMappingsJson { get; set; }
-        
+        public string OutputMappingsJson { get; set; } = "[]";
+
         [Column(TypeName = "json")]
-        public string PositionJson { get; set; }
-        
+        public string PositionJson { get; set; } = "{}";
+
         [NotMapped]
         public Dictionary<string, object> ActivityProperties { get; set; } = new();
-        
+
         [NotMapped]
         public List<InputMapping> InputMappings { get; set; } = new();
-        
+
         [NotMapped]
         public List<OutputMapping> OutputMappings { get; set; } = new();
-        
+
         [NotMapped]
         public NodePosition Position { get; set; } = new();
     }
-    
+
     public class WorkflowEdge
     {
         [Key]
-        public string Id { get; set; }
-        
+        public Guid Id { get; set; }
+
         public Guid WorkflowId { get; set; }
-        
+
         [ForeignKey("WorkflowId")]
         [JsonIgnore]
         public virtual WorkflowDefinition Workflow { get; set; }
-        
+
         [Required]
-        public string Source { get; set; }
-        
+        public Guid Source { get; set; }
+
         [Required]
-        public string Target { get; set; }
-        
+        public Guid Target { get; set; }
+
         [Column(TypeName = "json")]
-        public string ConditionJson { get; set; }
-        
+        public string? ConditionJson { get; set; }
+
         [NotMapped]
-        public EdgeCondition Condition { get; set; }
+        public EdgeCondition? Condition { get; set; }
     }
-    
+
     public class InputMapping
     {
-        public string SourceNodeId { get; set; }
-        public string SourceProperty { get; set; }
-        public string TargetProperty { get; set; }
+        public Guid SourceNodeId { get; set; }
+        public string SourceProperty { get; set; } = string.Empty;
+        public string TargetProperty { get; set; } = string.Empty;
     }
-    
+
     public class OutputMapping
     {
-        public string SourceProperty { get; set; }
-        public string TargetProperty { get; set; }
+        public string SourceProperty { get; set; } = string.Empty;
+        public string TargetProperty { get; set; } = string.Empty;
     }
-    
+
     public class EdgeCondition
     {
-        public string Expression { get; set; }
+        public string Expression { get; set; } = string.Empty;
     }
-    
+
     public class NodePosition
     {
         public int X { get; set; }

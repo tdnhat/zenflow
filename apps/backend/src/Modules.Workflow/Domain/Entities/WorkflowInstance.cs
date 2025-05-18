@@ -9,6 +9,7 @@ namespace Modules.Workflow.Domain.Entities
         public Guid Id { get; set; }
         
         public Guid WorkflowDefinitionId { get; set; }
+        public virtual WorkflowDefinition WorkflowDefinition { get; set; }
         
         [Required]
         [MaxLength(50)]

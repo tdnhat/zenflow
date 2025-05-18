@@ -14,21 +14,41 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
             
             builder.Property(e => e.Id)
                 .IsRequired()
-                .HasMaxLength(50);
+                .ValueGeneratedNever();
                 
             builder.Property(e => e.Source)
-                .IsRequired()
-                .HasMaxLength(50);
+                .IsRequired();
                 
             builder.Property(e => e.Target)
-                .IsRequired()
-                .HasMaxLength(50);
+                .IsRequired();
                 
-            builder.Property(e => e.ConditionJson)
-                .HasColumnType("nvarchar(max)");
+            builder.Property(e => e.ConditionJson);
                 
-            // Ignore the non-persisted property
-            builder.Ignore(e => e.Condition);
+            // Relationships
+            builder.HasOne(e => e.Workflow)
+                .WithMany(w => w.Edges)
+                .HasForeignKey(e => e.WorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Configure node source/target relationships properly
+            builder.HasOne<WorkflowNode>()
+                .WithMany()
+                .HasPrincipalKey(n => new { n.Id, n.WorkflowId })
+                .HasForeignKey(e => new { e.Source, e.WorkflowId })
+                .OnDelete(DeleteBehavior.Cascade);
+
+            builder.HasOne<WorkflowNode>()
+                .WithMany()
+                .HasPrincipalKey(n => new { n.Id, n.WorkflowId })
+                .HasForeignKey(e => new { e.Target, e.WorkflowId })
+                .OnDelete(DeleteBehavior.Cascade);
+            
+            // Remove any shadow properties
+            var navigation = builder.Metadata.FindNavigation(nameof(WorkflowEdge.Workflow));
+            if (navigation != null)
+            {
+                navigation.SetPropertyAccessMode(PropertyAccessMode.Property);
+            }
         }
     }
 }

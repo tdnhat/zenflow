@@ -24,30 +24,40 @@ namespace Modules.Workflow.Features.Workflows.CreateWorkflowDefinition
         {
             _logger.LogInformation("Creating new workflow definition with name '{Name}'", request.Name);
 
-            // Map command to domain entity
-            var workflow = new WorkflowDefinition
+            // Generate the workflow ID once
+            var workflowId = Guid.NewGuid();
+
+            // Create a dictionary to map the client-side node IDs to server-side node IDs
+            var nodeIdMappings = new Dictionary<Guid, Guid>();
+            
+            // First, create nodes with new server-side IDs but keep track of the mapping
+            var nodes = request.Nodes.Select(n => 
             {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Description = request.Description,
-                Version = 1,
-                CreatedAt = DateTime.UtcNow,
-                Nodes = request.Nodes.Select(n => new WorkflowNode
+                // Generate a new ID for each node and maintain a mapping
+                var newNodeId = Guid.NewGuid();
+                nodeIdMappings[n.Id] = newNodeId;
+                
+                return new WorkflowNode
                 {
-                    Id = n.Id,
+                    Id = newNodeId,
+                    WorkflowId = workflowId,
                     Name = n.Name,
                     ActivityType = n.ActivityType,
                     ActivityPropertiesJson = JsonSerializer.Serialize(n.ActivityProperties),
                     ActivityProperties = n.ActivityProperties,
                     InputMappingsJson = JsonSerializer.Serialize(n.InputMappings.Select(m => new InputMapping
                     {
-                        SourceNodeId = m.SourceNodeId,
+                        // Map the source node ID if it exists in our mappings
+                        SourceNodeId = nodeIdMappings.ContainsKey(m.SourceNodeId) ? 
+                            nodeIdMappings[m.SourceNodeId] : m.SourceNodeId,
                         SourceProperty = m.SourceProperty,
                         TargetProperty = m.TargetProperty
                     })),
                     InputMappings = n.InputMappings.Select(m => new InputMapping
                     {
-                        SourceNodeId = m.SourceNodeId,
+                        // Map the source node ID if it exists in our mappings
+                        SourceNodeId = nodeIdMappings.ContainsKey(m.SourceNodeId) ? 
+                            nodeIdMappings[m.SourceNodeId] : m.SourceNodeId,
                         SourceProperty = m.SourceProperty,
                         TargetProperty = m.TargetProperty
                     }).ToList(),
@@ -71,29 +81,48 @@ namespace Modules.Workflow.Features.Workflows.CreateWorkflowDefinition
                         X = n.Position.X,
                         Y = n.Position.Y
                     }
-                }).ToList(),
-                Edges = request.Edges.Select(e => new WorkflowEdge
-                {
-                    Id = e.Id,
-                    Source = e.Source,
-                    Target = e.Target,
-                    ConditionJson = e.Condition != null ? JsonSerializer.Serialize(new EdgeCondition
+                };
+            }).ToList();
+
+            // Map command to domain entity
+            var workflow = new WorkflowDefinition
+            {
+                Id = workflowId,
+                Name = request.Name,
+                Description = request.Description,
+                Version = 1,
+                CreatedAt = DateTime.UtcNow,
+                Nodes = nodes,
+                Edges = request.Edges.Select(e => {
+                    // Handle condition safely
+                    EdgeCondition? edgeCondition = null;
+                    string? conditionJson = null;
+                    
+                    if (e.Condition != null && !string.IsNullOrEmpty(e.Condition.Expression))
                     {
-                        Expression = e.Condition.Expression
-                    }) : null,
-                    Condition = e.Condition != null ? new EdgeCondition
+                        edgeCondition = new EdgeCondition { Expression = e.Condition.Expression };
+                        conditionJson = JsonSerializer.Serialize(edgeCondition);
+                    }
+                    
+                    return new WorkflowEdge
                     {
-                        Expression = e.Condition.Expression
-                    } : null
+                        Id = Guid.NewGuid(),
+                        WorkflowId = workflowId,
+                        // Map the source and target IDs to our newly generated IDs
+                        Source = nodeIdMappings[e.Source],
+                        Target = nodeIdMappings[e.Target],
+                        ConditionJson = conditionJson ?? string.Empty,
+                        Condition = edgeCondition
+                    };
                 }).ToList()
             };
 
             // Save to repository
-            var workflowId = await _workflowRepository.SaveAsync(workflow, cancellationToken);
+            var savedWorkflowId = await _workflowRepository.SaveAsync(workflow, cancellationToken);
 
-            _logger.LogInformation("Successfully created workflow definition with ID {WorkflowId}", workflowId);
+            _logger.LogInformation("Successfully created workflow definition with ID {WorkflowId}", savedWorkflowId);
 
-            return workflowId;
+            return savedWorkflowId;
         }
     }
 }

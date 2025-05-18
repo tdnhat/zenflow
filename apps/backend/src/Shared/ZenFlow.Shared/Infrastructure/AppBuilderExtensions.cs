@@ -23,7 +23,8 @@ public static class AppBuilderExtensions
         // Configure Swagger with authentication
         builder.Services.AddSwaggerGen(options =>
         {
-            options.SwaggerDoc("v1", new OpenApiInfo { 
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
                 Title = "ZenFlow API",
                 Version = "v1",
                 Description = "API for ZenFlow application"
@@ -58,15 +59,13 @@ public static class AppBuilderExtensions
         // Configure CORS
         builder.Services.AddCors(options =>
         {
-            options.AddPolicy("AllowFrontend", policy =>
+            options.AddPolicy("AllowAll", builder =>
             {
-                policy.WithOrigins(builder.Configuration.GetSection("CorsSettings:AllowedOrigins").Get<string[]>() ?? new[] { "http://localhost:3000" })
-                      .AllowAnyMethod()
-                      .AllowAnyHeader()
-                      .AllowCredentials();
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
             });
         });
-
 
         // Add authentication
         builder.Services.AddAuthentication()
@@ -124,7 +123,7 @@ public static class AppBuilderExtensions
         }
 
         app.UseHttpsRedirection();
-        app.UseCors("AllowFrontend");
+        app.UseCors("AllowAll");
         app.UseAuthentication();
         app.UseAuthorization();
 

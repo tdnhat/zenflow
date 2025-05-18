@@ -43,6 +43,8 @@ namespace Modules.Workflow.Infrastructure.Persistence
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // Create the schema first
+            modelBuilder.HasPostgresExtension("uuid-ossp");
             modelBuilder.HasDefaultSchema("workflow");
 
             // Configure the entity mappings

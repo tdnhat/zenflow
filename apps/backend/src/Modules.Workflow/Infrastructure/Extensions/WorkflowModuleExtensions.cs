@@ -25,8 +25,8 @@ namespace Modules.Workflow.Infrastructure.Extensions
 
             // Register the repository and other services
             services.AddScoped<IWorkflowRepository, WorkflowRepository>();
-            services.AddScoped<IWorkflowEngine, WorkflowEngine>();
             services.AddScoped<IWorkflowInstanceRepository, WorkflowInstanceRepository>();
+            services.AddScoped<IWorkflowEngine, WorkflowEngine>();
             services.AddSingleton<IPlaywrightFactory, PlaywrightFactory>();
 
             // Register Playwright services
@@ -48,6 +48,13 @@ namespace Modules.Workflow.Infrastructure.Extensions
 
         public static WebApplication UseWorkflowModule(this WebApplication app)
         {
+            // Create the workflow schema if it doesn't exist
+            using (var scope = app.Services.CreateScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<WorkflowDbContext>();
+                dbContext.Database.ExecuteSqlRaw("CREATE SCHEMA IF NOT EXISTS workflow;");
+            }
+            
             return app;
         }
     }

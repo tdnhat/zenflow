@@ -9,38 +9,43 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
         public void Configure(EntityTypeBuilder<WorkflowNode> builder)
         {
             builder.ToTable("WorkflowNodes");
-            
-            builder.HasKey(n => new { n.Id, n.WorkflowId });
-            
+
+            builder.HasKey(n => new { n.WorkflowId, n.Id });
+
             builder.Property(n => n.Id)
                 .IsRequired()
-                .HasMaxLength(50);
-                
+                .ValueGeneratedNever();
+
             builder.Property(n => n.Name)
                 .IsRequired()
                 .HasMaxLength(100);
-                
+
             builder.Property(n => n.ActivityType)
                 .IsRequired()
                 .HasMaxLength(200);
-                
+
             builder.Property(n => n.ActivityPropertiesJson)
-                .HasColumnType("nvarchar(max)");
-                
+                .IsRequired();
+
             builder.Property(n => n.InputMappingsJson)
-                .HasColumnType("nvarchar(max)");
-                
+                .IsRequired();
+
             builder.Property(n => n.OutputMappingsJson)
-                .HasColumnType("nvarchar(max)");
-                
+                .IsRequired();
+
             builder.Property(n => n.PositionJson)
-                .HasColumnType("nvarchar(max)");
-                
-            // Ignore the non-persisted properties
-            builder.Ignore(n => n.ActivityProperties);
-            builder.Ignore(n => n.InputMappings);
-            builder.Ignore(n => n.OutputMappings);
-            builder.Ignore(n => n.Position);
+                .IsRequired();
+
+            // Relationships
+            builder.HasOne(n => n.Workflow)
+                .WithMany(w => w.Nodes)
+                .HasForeignKey(n => n.WorkflowId)
+                .OnDelete(DeleteBehavior.Cascade);            // Remove any shadow properties
+            var navigation = builder.Metadata.FindNavigation(nameof(WorkflowNode.Workflow));
+            if (navigation != null)
+            {
+                navigation.SetPropertyAccessMode(PropertyAccessMode.Property);
+            }
         }
     }
 }

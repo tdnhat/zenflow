@@ -1,0 +1,122 @@
+{
+  "name": "Web Content Analysis Workflow",
+  "description": "Scrapes text from a website, summarizes it using AI, and sends the summary via email",
+  "nodes": [
+    {
+      "id": "5f1a9247-1b36-4422-a564-39e388ab9f7c",
+      "name": "Web Scraping",
+      "activityType": "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity",
+      "activityProperties": {
+        "TargetUrl": "https://example.com/blog",
+        "ElementSelector": "article.main-content"
+      },
+      "inputMappings": [],
+      "outputMappings": [
+        {
+          "sourceProperty": "ExtractedText",
+          "targetProperty": "WebContent"
+        }
+      ],
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "id": "6b2e7c38-f42a-4dc5-8a1d-2b0697875e3f",
+      "name": "Content Summarization",
+      "activityType": "ZenFlow.Activities.AI.SummarizeTextActivity",
+      "activityProperties": {},
+      "inputMappings": [
+        {
+          "sourceNodeId": "5f1a9247-1b36-4422-a564-39e388ab9f7c",
+          "sourceProperty": "WebContent",
+          "targetProperty": "TextToSummarize"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "Summary",
+          "targetProperty": "ContentSummary"
+        }
+      ],
+      "position": {
+        "x": 400,
+        "y": 100
+      }
+    },
+    {
+      "id": "c3e1d8f9-b52a-41e7-9c4b-56d29a8e7f0a",
+      "name": "Email Notification",
+      "activityType": "ZenFlow.Activities.Email.SendEmailActivity",
+      "activityProperties": {
+        "To": "user@example.com",
+        "Subject": "Daily Content Summary"
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "6b2e7c38-f42a-4dc5-8a1d-2b0697875e3f",
+          "sourceProperty": "ContentSummary",
+          "targetProperty": "Body"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "Success",
+          "targetProperty": "EmailSent"
+        }
+      ],
+      "position": {
+        "x": 700,
+        "y": 100
+      }
+    },
+    {
+      "id": "d7f4e1a2-c03b-42f8-b65a-7e98c1b3f2d4",
+      "name": "Extract Page Attribute",
+      "activityType": "ZenFlow.Activities.Playwright.GetElementAttributeActivity",
+      "activityProperties": {
+        "TargetUrl": "https://example.com/blog",
+        "ElementSelector": "meta[name='description']",
+        "AttributeName": "content"
+      },
+      "inputMappings": [],
+      "outputMappings": [
+        {
+          "sourceProperty": "AttributeValue",
+          "targetProperty": "PageDescription"
+        }
+      ],
+      "position": {
+        "x": 400,
+        "y": 300
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "09e4b3c2-a18d-47f6-95e7-8c36d7f5b9a0",
+      "source": "5f1a9247-1b36-4422-a564-39e388ab9f7c",
+      "target": "6b2e7c38-f42a-4dc5-8a1d-2b0697875e3f",
+      "condition": {
+        "expression": "true"
+      }
+    },
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "source": "6b2e7c38-f42a-4dc5-8a1d-2b0697875e3f",
+      "target": "c3e1d8f9-b52a-41e7-9c4b-56d29a8e7f0a",
+      "condition": {
+        "expression": "true"
+      }
+    },
+    {
+      "id": "c1d2e3f4-a5b6-7c8d-9e0f-1a2b3c4d5e6f",
+      "source": "5f1a9247-1b36-4422-a564-39e388ab9f7c",
+      "target": "d7f4e1a2-c03b-42f8-b65a-7e98c1b3f2d4",
+      "condition": {
+        "expression": "true"
+      }
+    }
+  ]
+}

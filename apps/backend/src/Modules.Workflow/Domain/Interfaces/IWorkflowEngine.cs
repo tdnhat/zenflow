@@ -7,14 +7,14 @@ namespace Modules.Workflow.Domain.Interfaces.Core
         // Start a new workflow instance
         Task<Guid> StartWorkflowAsync(
             Guid workflowDefinitionId,
-            Dictionary<string, object> initialVariables = null,
+            Dictionary<string, object>? initialVariables = null,
             CancellationToken cancellationToken = default);
 
         // Resume a suspended workflow at a specific node
         Task ResumeWorkflowAsync(
             Guid workflowInstanceId,
-            string nodeId,
-            Dictionary<string, object> outputData = null,
+            Guid nodeId,
+            Dictionary<string, object>? outputData = null,
             CancellationToken cancellationToken = default);
 
         // Cancel a running workflow

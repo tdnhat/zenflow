@@ -1,0 +1,95 @@
+{
+  "name": "Reuters Headlines Scraper",
+  "description": "Scrapes headline news from Reuters.com and sends them via email",
+  "nodes": [
+    {
+      "id": "7a1b9c32-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      "name": "Reuters Headline Scraper",
+      "activityType": "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity",
+      "activityProperties": {
+        "targetUrl": "https://www.reuters.com/",
+        "elementSelector": ".story-card__area-headline__2ZAtJ span"
+      },
+      "inputMappings": [],
+      "outputMappings": [
+        {
+          "sourceProperty": "extractedText",
+          "targetProperty": "headlines"
+        }
+      ],
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "id": "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a",
+      "name": "Headlines Formatter",
+      "activityType": "ZenFlow.Activities.AI.SummarizeTextActivity",
+      "activityProperties": {
+        "maxSummaryLength": 500
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "7a1b9c32-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+          "sourceProperty": "headlines",
+          "targetProperty": "textToSummarize"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "summary",
+          "targetProperty": "emailBody"
+        }
+      ],
+      "position": {
+        "x": 300,
+        "y": 100
+      }
+    },
+    {
+      "id": "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
+      "name": "Send Email Notification",
+      "activityType": "ZenFlow.Activities.Email.SendEmailActivity",
+      "activityProperties": {
+        "to": "tdn283@gmail.com",
+        "subject": "Daily Reuters Headlines"
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a",
+          "sourceProperty": "emailBody",
+          "targetProperty": "body"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "success",
+          "targetProperty": "emailSent"
+        }
+      ],
+      "position": {
+        "x": 500,
+        "y": 100
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "a1b2c3d4-e5f6-a7b8-c9d0-e1f2a3b4c5d6",
+      "source": "7a1b9c32-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      "target": "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a",
+      "condition": {
+        "expression": "true"
+      }
+    },
+    {
+      "id": "c5d6e7f8-a9b0-c1d2-e3f4-a5b6c7d8e9f0",
+      "source": "2d3e4f5a-6b7c-8d9e-0f1a-2b3c4d5e6f7a",
+      "target": "8f9a0b1c-2d3e-4f5a-6b7c-8d9e0f1a2b3c",
+      "condition": {
+        "expression": "true"
+      }
+    }
+  ]
+} 

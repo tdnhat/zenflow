@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Modules.Workflow.DDD.Entities;
+using Modules.Workflow.Domain.Entities;
 
 namespace Modules.Workflow.Infrastructure.Persistence.Configurations
 {
@@ -10,50 +10,42 @@ namespace Modules.Workflow.Infrastructure.Persistence.Configurations
         {
             builder.ToTable("WorkflowNodes");
 
-            builder.HasKey(n => n.Id);
+            builder.HasKey(n => new { n.WorkflowId, n.Id });
 
-            builder.Property(n => n.WorkflowId)
-                .IsRequired();
+            builder.Property(n => n.Id)
+                .IsRequired()
+                .ValueGeneratedNever();
 
-            builder.Property(n => n.NodeType)
+            builder.Property(n => n.Name)
                 .IsRequired()
                 .HasMaxLength(100);
 
-            builder.Property(n => n.NodeKind)
+            builder.Property(n => n.ActivityType)
                 .IsRequired()
-                .HasMaxLength(50);
-
-            builder.Property(n => n.Label)
                 .HasMaxLength(200);
 
-            builder.Property(n => n.X)
+            builder.Property(n => n.ActivityPropertiesJson)
                 .IsRequired();
 
-            builder.Property(n => n.Y)
+            builder.Property(n => n.InputMappingsJson)
                 .IsRequired();
 
-            builder.Property(n => n.ConfigJson)
-                .HasColumnType("jsonb");
+            builder.Property(n => n.OutputMappingsJson)
+                .IsRequired();
 
-            // Configure the relationship to Workflow - fix to prevent shadow property
+            builder.Property(n => n.PositionJson)
+                .IsRequired();
+
+            // Relationships
             builder.HasOne(n => n.Workflow)
                 .WithMany(w => w.Nodes)
                 .HasForeignKey(n => n.WorkflowId)
-                .HasConstraintName("FK_WorkflowNodes_Workflows_WorkflowId")
-                .OnDelete(DeleteBehavior.Cascade);
-
-            // Configure audit fields from Aggregate base class
-            builder.Property(n => n.CreatedAt)
-                .IsRequired();
-
-            builder.Property(n => n.CreatedBy)
-                .IsRequired()
-                .HasMaxLength(100);
-
-            builder.Property(n => n.LastModifiedAt);
-
-            builder.Property(n => n.LastModifiedBy)
-                .HasMaxLength(100);
+                .OnDelete(DeleteBehavior.Cascade);            // Remove any shadow properties
+            var navigation = builder.Metadata.FindNavigation(nameof(WorkflowNode.Workflow));
+            if (navigation != null)
+            {
+                navigation.SetPropertyAccessMode(PropertyAccessMode.Property);
+            }
         }
     }
 }

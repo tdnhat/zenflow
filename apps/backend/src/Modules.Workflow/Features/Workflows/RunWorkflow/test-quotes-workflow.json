@@ -1,0 +1,64 @@
+{
+  "name": "Simple Quotes Scraper",
+  "description": "Scrapes quotes from quotes.toscrape.com and sends them via email",
+  "nodes": [
+    {
+      "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "name": "Extract Quotes",
+      "activityType": "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity",
+      "activityProperties": {
+        "targetUrl": "https://quotes.toscrape.com/",
+        "elementSelector": ".quote .text"
+      },
+      "inputMappings": [],
+      "outputMappings": [
+        {
+          "sourceProperty": "extractedText",
+          "targetProperty": "quotesData"
+        }
+      ],
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "id": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+      "name": "Send Email",
+      "activityType": "ZenFlow.Activities.Email.SendEmailActivity",
+      "activityProperties": {
+        "to": "tdn283@gmail.com",
+        "subject": "Quotes from quotes.toscrape.com",
+        "body": "Placeholder content - will be replaced by scraped data",
+        "isHtml": false
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+          "sourceProperty": "quotesData",
+          "targetProperty": "body"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "success",
+          "targetProperty": "emailSent"
+        }
+      ],
+      "position": {
+        "x": 300,
+        "y": 100
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+      "source": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+      "target": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+      "condition": {
+        "expression": "true"
+      }
+    }
+  ]
+} 

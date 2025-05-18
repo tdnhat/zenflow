@@ -3,6 +3,8 @@ using Modules.Workflow.Activities;
 using Modules.Workflow.Domain.Core;
 using Modules.Workflow.Domain.Enums;
 using Modules.Workflow.Domain.Interfaces.Core;
+using System.Text.Json;
+using System.Linq;
 
 namespace Modules.Workflow.Infrastructure.Services.Activities
 {
@@ -30,6 +32,10 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             NodeExecutionContext nodeContext,
             CancellationToken cancellationToken = default)
         {
+            // Log all activity properties for debugging
+            nodeContext.AddLog($"Activity properties: {JsonSerializer.Serialize(activityProperties)}");
+            nodeContext.AddLog($"Input data: {JsonSerializer.Serialize(inputData)}");
+            
             return await ExecuteWithErrorHandlingAsync(async () =>
             {
                 nodeContext.AddLog($"Executing Playwright activity: {activityType}");
@@ -55,9 +61,9 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             NodeExecutionContext nodeContext)
         {
             // Extract activity properties
-            var targetUrl = GetPropertyValue<string>(activityProperties, inputData, "TargetUrl");
-            var elementSelector = GetPropertyValue<string>(activityProperties, inputData, "ElementSelector");
-            var attributeName = GetPropertyValue<string>(activityProperties, inputData, "AttributeName");
+            var targetUrl = GetPropertyValue<string>(activityProperties, inputData, "targetUrl");
+            var elementSelector = GetPropertyValue<string>(activityProperties, inputData, "elementSelector");
+            var attributeName = GetPropertyValue<string>(activityProperties, inputData, "attributeName");
 
             nodeContext.AddLog($"Getting attribute '{attributeName}' from element '{elementSelector}' on page '{targetUrl}'");
 
@@ -70,7 +76,7 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             // Return the result
             return (ActivityExecutionResult.Completed, new Dictionary<string, object>
             {
-                ["AttributeValue"] = attributeValue
+                ["attributeValue"] = attributeValue
             });
         }
 
@@ -79,9 +85,15 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             Dictionary<string, object> inputData,
             NodeExecutionContext nodeContext)
         {
+            // Log all properties before attempting to extract them
+            foreach (var prop in activityProperties)
+            {
+                nodeContext.AddLog($"Property {prop.Key}: {prop.Value} (Type: {prop.Value?.GetType().FullName ?? "null"})");
+            }
+            
             // Extract properties
-            var targetUrl = GetPropertyValue<string>(activityProperties, inputData, "TargetUrl");
-            var elementSelector = GetPropertyValue<string>(activityProperties, inputData, "ElementSelector");
+            var targetUrl = GetPropertyValue<string>(activityProperties, inputData, "targetUrl");
+            var elementSelector = GetPropertyValue<string>(activityProperties, inputData, "elementSelector");
 
             nodeContext.AddLog($"Extracting text from element '{elementSelector}' on page '{targetUrl}'");
 
@@ -94,7 +106,7 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             // Return the result
             return (ActivityExecutionResult.Completed, new Dictionary<string, object>
             {
-                ["ExtractedText"] = extractedText
+                ["extractedText"] = extractedText
             });
         }
 
@@ -103,17 +115,101 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             Dictionary<string, object> inputData,
             string propertyName)
         {
-            // First check input data (which might come from previous nodes)
-            if (inputData.TryGetValue(propertyName, out var value) && value is T typedValue)
-                return typedValue;
+            // Case-insensitive property lookup
 
-            // Then check activity properties (from the workflow definition)
-            if (activityProperties.TryGetValue(propertyName, out var propValue) && propValue is T propTypedValue)
-                return propTypedValue;
+            // Try to find the property in input data first
+            var inputKey = inputData.Keys
+                .FirstOrDefault(k => string.Equals(k, propertyName, StringComparison.OrdinalIgnoreCase));
+            
+            if (inputKey != null && inputData.TryGetValue(inputKey, out var inputValue))
+            {
+                if (inputValue is T typedValue)
+                {
+                    return typedValue;
+                }
+                
+                // Handle JsonElement conversion
+                if (inputValue is JsonElement jsonElement)
+                {
+                    return ConvertJsonElement<T>(jsonElement);
+                }
+                
+                // Try to convert the value
+                try
+                {
+                    return (T)Convert.ChangeType(inputValue, typeof(T));
+                }
+                catch
+                {
+                    // Ignore conversion errors and continue checking properties
+                }
+            }
+
+            // Then check activity properties
+            var propKey = activityProperties.Keys
+                .FirstOrDefault(k => string.Equals(k, propertyName, StringComparison.OrdinalIgnoreCase));
+            
+            if (propKey != null && activityProperties.TryGetValue(propKey, out var propValue))
+            {
+                if (propValue is T propTypedValue)
+                {
+                    return propTypedValue;
+                }
+                
+                // Handle JsonElement conversion
+                if (propValue is JsonElement jsonElement)
+                {
+                    return ConvertJsonElement<T>(jsonElement);
+                }
+                
+                // Try to convert the value
+                try
+                {
+                    return (T)Convert.ChangeType(propValue, typeof(T));
+                }
+                catch (Exception ex)
+                {
+                    throw new InvalidOperationException($"Property '{propertyName}' found but could not be converted to type {typeof(T).Name}. Error: {ex.Message}");
+                }
+            }
 
             // If not found, throw an error
             throw new InvalidOperationException($"Property '{propertyName}' not found in input data or activity properties");
         }
-    }
 
+        private T ConvertJsonElement<T>(JsonElement element)
+        {
+            Type targetType = typeof(T);
+            
+            if (targetType == typeof(string))
+            {
+                return (T)(object)element.GetString();
+            }
+            else if (targetType == typeof(int))
+            {
+                return (T)(object)element.GetInt32();
+            }
+            else if (targetType == typeof(long))
+            {
+                return (T)(object)element.GetInt64();
+            }
+            else if (targetType == typeof(double))
+            {
+                return (T)(object)element.GetDouble();
+            }
+            else if (targetType == typeof(bool))
+            {
+                return (T)(object)element.GetBoolean();
+            }
+            else if (targetType == typeof(DateTime))
+            {
+                return (T)(object)element.GetDateTime();
+            }
+            else
+            {
+                // For more complex types, use JsonSerializer
+                return JsonSerializer.Deserialize<T>(element.GetRawText());
+            }
+        }
+    }
 }

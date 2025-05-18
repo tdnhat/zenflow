@@ -10,16 +10,10 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
     public class WorkflowInstanceRepository : IWorkflowInstanceRepository
     {
         private readonly WorkflowDbContext _dbContext;
-        private readonly JsonSerializerOptions _jsonOptions;
-
+        
         public WorkflowInstanceRepository(WorkflowDbContext dbContext)
         {
             _dbContext = dbContext;
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false
-            };
         }
 
         public async Task<WorkflowExecutionContext> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -59,8 +53,9 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
                     Status = context.Status.ToString(),
                     StartedAt = context.StartedAt,
                     CompletedAt = context.CompletedAt,
-                    Error = context.Error,
-                    VariablesJson = JsonSerializer.Serialize(context.Variables, _jsonOptions),
+                    Error = context.Error ?? string.Empty,
+                    VariablesJson = JsonSerializer.Serialize(context.Variables, 
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                     NodeExecutions = new List<NodeExecution>()
                 };
 
@@ -71,8 +66,9 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
                 entity.Status = context.Status.ToString();
                 entity.StartedAt = context.StartedAt;
                 entity.CompletedAt = context.CompletedAt;
-                entity.Error = context.Error;
-                entity.VariablesJson = JsonSerializer.Serialize(context.Variables, _jsonOptions);
+                entity.Error = context.Error ?? string.Empty;
+                entity.VariablesJson = JsonSerializer.Serialize(context.Variables, 
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
                 // Remove existing node executions
                 _dbContext.NodeExecutions.RemoveRange(entity.NodeExecutions);
@@ -90,10 +86,13 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
                     Status = nodeContext.Status.ToString(),
                     StartedAt = nodeContext.StartedAt,
                     CompletedAt = nodeContext.CompletedAt,
-                    Error = nodeContext.Error,
-                    InputDataJson = JsonSerializer.Serialize(nodeContext.InputData, _jsonOptions),
-                    OutputDataJson = JsonSerializer.Serialize(nodeContext.OutputData, _jsonOptions),
-                    LogsJson = JsonSerializer.Serialize(nodeContext.Logs, _jsonOptions)
+                    Error = nodeContext.Error ?? string.Empty,
+                    InputDataJson = JsonSerializer.Serialize(nodeContext.InputData, 
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
+                    OutputDataJson = JsonSerializer.Serialize(nodeContext.OutputData, 
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
+                    LogsJson = JsonSerializer.Serialize(nodeContext.Logs, 
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
                 };
 
                 await _dbContext.NodeExecutions.AddAsync(nodeExecution, cancellationToken);
@@ -128,7 +127,8 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
                 Error = entity.Error,
                 Variables = string.IsNullOrEmpty(entity.VariablesJson)
                     ? new Dictionary<string, object>()
-                    : JsonSerializer.Deserialize<Dictionary<string, object>>(entity.VariablesJson, _jsonOptions),
+                    : JsonSerializer.Deserialize<Dictionary<string, object>>(entity.VariablesJson, 
+                        new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                 NodeExecutions = new Dictionary<string, NodeExecutionContext>()
             };
 
@@ -144,13 +144,16 @@ namespace Modules.Workflow.Infrastructure.Persistence.Repositories
                     Error = nodeExecution.Error,
                     InputData = string.IsNullOrEmpty(nodeExecution.InputDataJson)
                         ? new Dictionary<string, object>()
-                        : JsonSerializer.Deserialize<Dictionary<string, object>>(nodeExecution.InputDataJson, _jsonOptions),
+                        : JsonSerializer.Deserialize<Dictionary<string, object>>(nodeExecution.InputDataJson, 
+                            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                     OutputData = string.IsNullOrEmpty(nodeExecution.OutputDataJson)
                         ? new Dictionary<string, object>()
-                        : JsonSerializer.Deserialize<Dictionary<string, object>>(nodeExecution.OutputDataJson, _jsonOptions),
+                        : JsonSerializer.Deserialize<Dictionary<string, object>>(nodeExecution.OutputDataJson, 
+                            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }),
                     Logs = string.IsNullOrEmpty(nodeExecution.LogsJson)
                         ? new List<string>()
-                        : JsonSerializer.Deserialize<List<string>>(nodeExecution.LogsJson, _jsonOptions)
+                        : JsonSerializer.Deserialize<List<string>>(nodeExecution.LogsJson, 
+                            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
                 };
 
                 context.NodeExecutions[nodeExecution.NodeId] = nodeContext;

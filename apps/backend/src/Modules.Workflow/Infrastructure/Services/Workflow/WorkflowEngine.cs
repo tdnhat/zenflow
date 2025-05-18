@@ -3,6 +3,7 @@ using Modules.Workflow.Domain.Core;
 using Modules.Workflow.Domain.Enums;
 using Modules.Workflow.Domain.Interfaces.Core;
 using Modules.Workflow.Domain.Entities;
+using System.Text.Json;
 
 namespace Modules.Workflow.Infrastructure.Services.Workflow
 {
@@ -298,6 +299,9 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
                 nodeContext,
                 cancellationToken);
 
+            // Log output data for debugging
+            nodeContext.AddLog($"Raw node output data: {JsonSerializer.Serialize(outputData)}");
+
             // Update node status based on result
             if (result == ActivityExecutionResult.Completed)
             {
@@ -305,10 +309,28 @@ namespace Modules.Workflow.Infrastructure.Services.Workflow
                 nodeContext.CompletedAt = DateTime.UtcNow;
                 nodeContext.AddLog("Node execution completed successfully");
 
-                // Store output data
+                // Store raw output data
                 foreach (var (key, value) in outputData)
                 {
                     nodeContext.OutputData[key] = value;
+                }
+
+                // Apply output mappings if defined
+                if (node.OutputMappings != null && node.OutputMappings.Count > 0)
+                {
+                    foreach (var mapping in node.OutputMappings)
+                    {
+                        if (outputData.TryGetValue(mapping.SourceProperty, out var value))
+                        {
+                            // Apply the mapping - store the value with the mapped property name
+                            nodeContext.OutputData[mapping.TargetProperty] = value;
+                            nodeContext.AddLog($"Applied output mapping: {mapping.SourceProperty} -> {mapping.TargetProperty}");
+                        }
+                        else
+                        {
+                            nodeContext.AddLog($"Warning: Output mapping source property not found: {mapping.SourceProperty}");
+                        }
+                    }
                 }
             }
             else if (result == ActivityExecutionResult.Failed)

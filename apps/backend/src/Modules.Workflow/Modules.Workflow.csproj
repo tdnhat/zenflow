@@ -9,21 +9,7 @@
   <ItemGroup>
 	<PackageReference Include="Carter" Version="8.0.0" />
 	  
-	<!-- Elsa Workflows Core Packages -->
-	<!-- <PackageReference Include="Elsa" Version="3.3.5" />
-	<PackageReference Include="Elsa.CSharp" Version="3.3.5" />
-	<PackageReference Include="Elsa.EntityFrameworkCore" Version="3.3.5" />
-	<PackageReference Include="Elsa.EntityFrameworkCore.PostgreSql" Version="3.3.5" />
-	<PackageReference Include="Elsa.Http" Version="3.3.5" />
-	<PackageReference Include="Elsa.Identity" Version="3.3.5" />
-	<PackageReference Include="Elsa.JavaScript" Version="3.3.5" />
-	<PackageReference Include="Elsa.Liquid" Version="3.3.5" />
-	<PackageReference Include="Elsa.Scheduling" Version="3.3.5" /> -->
-	  
-	<!-- Elsa Designer -->
-	<!-- <PackageReference Include="Elsa.Server.Api" Version="2.15.1" /> -->
-	<!-- <PackageReference Include="Elsa.Designer.Components.Web" Version="2.15.1" /> -->
-	<!-- <PackageReference Include="Elsa.Workflows.Api" Version="3.3.5" /> -->
+		<!-- Workflow Engine Dependencies -->
 	<PackageReference Include="MailKit" Version="4.12.0" />
 	  
 	<!-- Playwright for browser automation -->

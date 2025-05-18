@@ -57,19 +57,33 @@ namespace Modules.Workflow.Infrastructure.Services.Activities
             
             nodeContext.AddLog($"Sending email to {to} with subject: {subject}");
 
-            // Execute email sending
-            var success = await _emailService.SendEmailAsync(to, subject, body);
+            // Convert single email to IEnumerable<string>
+            var toAddresses = new[] { to };
 
-            nodeContext.AddLog(success 
-                ? "Email sent successfully" 
-                : "Failed to send email");
-
-            // Return the result
-            return (success ? ActivityExecutionResult.Completed : ActivityExecutionResult.Failed, 
-                    new Dictionary<string, object>
-                    {
-                        ["Success"] = success
-                    });
+            try
+            {
+                // Execute email sending
+                await _emailService.SendEmailAsync(toAddresses, subject, body);
+                
+                nodeContext.AddLog("Email sent successfully");
+                
+                // Return the result
+                return (ActivityExecutionResult.Completed, 
+                        new Dictionary<string, object>
+                        {
+                            ["Success"] = true
+                        });
+            }
+            catch (Exception ex)
+            {
+                nodeContext.AddLog($"Failed to send email: {ex.Message}");
+                
+                return (ActivityExecutionResult.Failed, 
+                        new Dictionary<string, object>
+                        {
+                            ["Success"] = false
+                        });
+            }
         }
 
         private T GetPropertyValue<T>(

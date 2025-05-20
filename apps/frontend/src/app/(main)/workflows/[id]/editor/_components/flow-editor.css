@@ -98,12 +98,16 @@
   filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.8));
 }
 
-/* Handle styling */
-.react-flow__handle {
-  width: 12px !important;
-  height: 12px !important;
-  background-color: var(--background) !important;
-  border: 2px solid var(--primary) !important;
+
+
+/* Edge styling improvements */
+.react-flow__edge-path {
+  stroke-width: 2px !important;
+  transition: stroke 0.2s, stroke-width 0.2s;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke-width: 3px !important;
 }
 
 /* Input handle (top) styling */

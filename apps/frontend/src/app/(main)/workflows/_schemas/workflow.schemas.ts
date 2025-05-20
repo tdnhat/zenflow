@@ -1,26 +1,48 @@
 import { z } from "zod";
 
+// Position schema to use in node schema
+const positionSchema = z.object({
+    x: z.number(),
+    y: z.number(),
+});
+
+// Input mapping schema
+const inputMappingSchema = z.object({
+    sourceNodeId: z.string(),
+    sourceProperty: z.string(),
+    targetProperty: z.string(),
+});
+
+// Output mapping schema
+const outputMappingSchema = z.object({
+    sourceProperty: z.string(),
+    targetProperty: z.string(),
+    targetNodeId: z.string().optional(),
+});
+
+// Condition schema
+const conditionSchema = z.object({
+    type: z.string().optional(),
+    expression: z.string(),
+});
+
 // Schema for workflow nodes
 export const workflowNodeSchema = z.object({
     id: z.string(),
-    nodeType: z.string(),
-    nodeKind: z.string(),
-    label: z.string(),
-    x: z.number(),
-    y: z.number(),
-    configJson: z.string(),
+    name: z.string(),
+    activityType: z.string(),
+    activityProperties: z.record(z.unknown()),
+    position: positionSchema,
+    inputMappings: z.array(inputMappingSchema).optional(),
+    outputMappings: z.array(outputMappingSchema).optional(),
 });
 
 // Schema for workflow edges
 export const workflowEdgeSchema = z.object({
     id: z.string(),
-    sourceNodeId: z.string(),
-    targetNodeId: z.string(),
-    label: z.string().optional().default(""),
-    edgeType: z.string().optional().default("default"),
-    conditionJson: z.string().optional().default("{}"),
-    sourceHandle: z.string().optional().default(""),
-    targetHandle: z.string().optional().default(""),
+    source: z.string(),
+    target: z.string(),
+    condition: conditionSchema.optional(),
 });
 
 // Schema for bulk saving workflow

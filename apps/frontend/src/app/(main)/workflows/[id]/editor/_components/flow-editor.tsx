@@ -6,6 +6,8 @@ import {
     Panel,
     MiniMap,
     BackgroundVariant,
+    ConnectionLineType,
+    ConnectionMode,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import "./flow-editor.css";
@@ -14,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Save, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useWorkflowStore } from "@/store/workflow.store";
-import { useSaveWorkflow } from "../../../_hooks/use-workflows";
+import { useUpdateWorkflow } from "../../../_hooks/use-workflows";
 import { useShallow } from "zustand/react/shallow";
 
 import { nodeTypes } from "./custom-nodes/index";
@@ -22,7 +24,25 @@ import { useFlowSelection } from "../_hooks/useFlowSelection";
 import { useDeleteHandler } from "../_hooks/useDeleteHandler";
 import { useReactFlow } from "@xyflow/react";
 import { v4 as uuidv4 } from "uuid";
-import { useNodeTypes } from "../../../_hooks/use-workflows";
+
+// Map of node types to their display names
+const nodeTypeDisplayNames: Record<string, string> = {
+    "manual-trigger": "Manual Trigger",
+    navigate: "Navigate",
+    click: "Click",
+    "input-text": "Input Text",
+    "wait-for-selector": "Wait for Selector",
+    screenshot: "Screenshot",
+    "crawl-data": "Crawl Data",
+    "ZenFlow.Activities.Http.HttpRequestActivity": "HTTP Request",
+    "ZenFlow.Activities.Email.SendEmailActivity": "Send Email",
+    "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity":
+        "Extract Data",
+    // Add shorter aliases for the workflow editor to use
+    "http-request": "HTTP Request",
+    "send-email": "Send Email",
+    "extract-data": "Extract Data",
+};
 
 const selector = (state: ReturnType<typeof useWorkflowStore.getState>) => ({
     nodes: state.nodes,
@@ -39,17 +59,10 @@ const Flow = () => {
     const workflowId = params.id as string;
     const reactFlowWrapper = useRef<HTMLDivElement>(null);
     const { screenToFlowPosition } = useReactFlow();
-    const { data: nodeTypesData } = useNodeTypes();
 
     // Use Zustand store with shallow selector - from official pattern
-    const { 
-        nodes, 
-        edges, 
-        onNodesChange, 
-        onEdgesChange, 
-        onConnect,
-        setNodes
-    } = useWorkflowStore(useShallow(selector));
+    const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes } =
+        useWorkflowStore(useShallow(selector));
 
     // Use extracted hooks for selection and delete operations
     const { selectedElements, setSelectedElements, hasSelection } =
@@ -63,16 +76,10 @@ const Flow = () => {
         setSelectedElements
     );
 
-    // Find node title from nodeTypesData
-    const findNodeTitle = useCallback(
-        (nodeType: string) => {
-            if (!nodeTypesData) return nodeType;
-            const allTasks = nodeTypesData.flatMap((category) => category.tasks);
-            const task = allTasks.find((task) => task.type === nodeType);
-            return task?.title || nodeType;
-        },
-        [nodeTypesData]
-    );
+    // Find node title from static mapping
+    const findNodeTitle = useCallback((nodeType: string) => {
+        return nodeTypeDisplayNames[nodeType] || nodeType;
+    }, []);
 
     // Handle drag over for drag and drop
     const onDragOver = useCallback((event: React.DragEvent) => {
@@ -84,7 +91,9 @@ const Flow = () => {
     const onDrop = useCallback(
         (event: React.DragEvent) => {
             event.preventDefault();
-            const nodeType = event.dataTransfer.getData("application/reactflow");
+            const nodeType = event.dataTransfer.getData(
+                "application/reactflow"
+            );
             if (!nodeType || typeof nodeType !== "string") {
                 return;
             }
@@ -94,30 +103,51 @@ const Flow = () => {
             });
             const nodeTitle = findNodeTitle(nodeType);
             const nodeId = uuidv4();
+
+            // Initialize activity properties based on node type
+            let activityProperties = {};
+
+            if (nodeType === "ZenFlow.Activities.Http.HttpRequestActivity") {
+                activityProperties = {
+                    url: "https://api.example.com",
+                    method: "GET",
+                };
+            } else if (
+                nodeType === "ZenFlow.Activities.Email.SendEmailActivity"
+            ) {
+                activityProperties = {
+                    to: "",
+                    subject: "",
+                    body: "",
+                    isHtml: false,
+                };
+            } else if (
+                nodeType ===
+                "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity"
+            ) {
+                activityProperties = {
+                    targetUrl: "https://example.com",
+                    elementSelector: ".selector",
+                };
+            }
+
             const newNode = {
                 id: nodeId,
                 type: nodeType,
                 position,
-                data: nodeType === "custom"
-                    ? {
-                        label: `Custom Node ${nodes.length + 1}`,
-                        description: "Drag me around!",
-                        nodeKind: "ACTION",
-                        nodeType: nodeType,
-                    }
-                    : {
-                        label: nodeTitle,
-                        nodeKind: "ACTION",
-                        nodeType: nodeType,
-                    },
+                data: {
+                    label: nodeTitle,
+                    activityProperties: activityProperties,
+                },
             };
             setNodes([...nodes, newNode]);
         },
         [screenToFlowPosition, nodes, setNodes, findNodeTitle]
     );
 
-    // Use the save workflow hook from use-workflows.ts
-    const { saveWorkflowData, isSaving } = useSaveWorkflow(workflowId);
+    // Use the update workflow hook from use-workflows.ts
+    const { updateWorkflowData, isSaving, isLoading } =
+        useUpdateWorkflow(workflowId);
 
     return (
         <div className="react-flow-wrapper">
@@ -131,14 +161,19 @@ const Flow = () => {
                     onDragOver={onDragOver}
                     onDrop={onDrop}
                     nodeTypes={nodeTypes}
+                    connectionLineType={ConnectionLineType.SmoothStep}
+                    connectionMode={ConnectionMode.Loose}
+                    defaultEdgeOptions={{
+                        type: "smoothstep",
+                        style: {
+                            strokeWidth: 2,
+                        },
+                        animated: true,
+                    }}
                     fitView
                     deleteKeyCode={null} // Disable built-in delete to use our custom implementation
                 >
-                    <MiniMap
-                        zoomable
-                        pannable
-                        position="bottom-right"
-                    />
+                    <MiniMap zoomable pannable position="bottom-right" />
                     <Background variant={BackgroundVariant.Dots} />
                     <Controls />
                     <Panel position="top-right">
@@ -154,10 +189,12 @@ const Flow = () => {
                             <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => saveWorkflowData(nodes, edges)}
-                                disabled={isSaving}
+                                onClick={() => updateWorkflowData(nodes, edges)}
+                                disabled={isSaving || isLoading}
                             >
                                 {isSaving ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : isLoading ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : (
                                     <Save className="h-4 w-4" />

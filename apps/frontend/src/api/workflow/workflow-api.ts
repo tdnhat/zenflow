@@ -1,122 +1,138 @@
 import { WorkflowFormValues, WorkflowSaveValues } from "@/app/(main)/workflows/_schemas/workflow.schemas";
 import api from "@/lib/axios";
-import { WorkflowDto, WorkflowDetailDto, NodeTypeDto } from "@/types/workflow.type";
+import { ConditionDto, InputMappingDto, OutputMappingDto, WorkflowDefinitionDto, WorkflowEdgeDto, WorkflowNodeDto } from "@/types/workflow.type";
 import { Edge, Node } from "@xyflow/react";
 
 // Base endpoint for workflows
 const WORKFLOWS_ENDPOINT = "/workflows";
 
 // Workflow CRUD operations
-export const fetchWorkflows = async (): Promise<WorkflowDto[]> => {
+export const fetchWorkflows = async (): Promise<WorkflowDefinitionDto[]> => {
     const response = await api.get(WORKFLOWS_ENDPOINT);
     return response.data;
 };
 
 export const fetchWorkflowById = async (
     id: string
-): Promise<WorkflowDetailDto> => {
+): Promise<WorkflowDefinitionDto> => {
     const response = await api.get(`${WORKFLOWS_ENDPOINT}/${id}`);
     return response.data;
 };
 
 export const createWorkflow = async (
     data: WorkflowFormValues
-): Promise<WorkflowDto> => {
-    const response = await api.post(WORKFLOWS_ENDPOINT, data);
-    return response.data;
+): Promise<string> => {
+    // Include empty nodes and edges arrays when creating a new workflow
+    const workflowData = {
+        ...data,
+        nodes: [],
+        edges: []
+    };
+    
+    const response = await api.post(WORKFLOWS_ENDPOINT, workflowData);
+    return response.data.id;
 };
 
-export const fetchNodeTypes = async (): Promise<NodeTypeDto[]> => {
-    const response = await api.get("/node-types");
-    return response.data;
+// Define interface for mapping data structure
+interface MappingData {
+    sourceNodeId?: string;
+    sourceProperty?: string;
+    targetProperty?: string;
+    targetNodeId?: string;
+}
+
+// Convert React Flow nodes to the format expected by backend
+export const convertNodesToBackendFormat = (nodes: Node[]): WorkflowNodeDto[] => {
+    return nodes.map(node => {
+        // Extract data from the node
+        const nodeData = node.data || {};
+        
+        // Create a base node with required properties
+        const baseNode: WorkflowNodeDto = {
+            id: node.id,
+            name: String(nodeData.label || node.type || "Unnamed Node"),
+            activityType: String(node.type || ""),
+            // Convert node properties to the format backend expects
+            activityProperties: nodeData.activityProperties || Object.create(null),
+            position: {
+                x: node.position.x,
+                y: node.position.y
+            }
+        };
+        
+        // Add optional input mappings if they exist and are correctly formatted
+        if (nodeData.inputMappings && Array.isArray(nodeData.inputMappings)) {
+            baseNode.inputMappings = nodeData.inputMappings.map((mapping: MappingData): InputMappingDto => ({
+                sourceNodeId: mapping.sourceNodeId || "",
+                sourceProperty: mapping.sourceProperty || "",
+                targetProperty: mapping.targetProperty || ""
+            }));
+        }
+        
+        // Add optional output mappings if they exist and are correctly formatted
+        if (nodeData.outputMappings && Array.isArray(nodeData.outputMappings)) {
+            baseNode.outputMappings = nodeData.outputMappings.map((mapping: MappingData): OutputMappingDto => ({
+                sourceProperty: mapping.sourceProperty || "",
+                targetProperty: mapping.targetProperty || "",
+                ...(mapping.targetNodeId ? { targetNodeId: mapping.targetNodeId } : {})
+            }));
+        }
+        
+        return baseNode;
+    });
 };
 
-export const saveWorkflow = async (
+// Convert React Flow edges to the format expected by backend
+export const convertEdgesToBackendFormat = (edges: Edge[]): WorkflowEdgeDto[] => {
+    return edges.map(edge => {
+        // Basic properties for all edges
+        const result: WorkflowEdgeDto = {
+            id: edge.id,
+            source: edge.source,
+            target: edge.target
+        };
+
+        // Add condition if it exists and has the expected properties
+        if (edge.data?.condition && 
+            typeof edge.data.condition === 'object' && 
+            edge.data.condition !== null) {
+            
+            // Get condition data safely
+            const conditionData = edge.data.condition as Record<string, unknown>;
+            
+            // Create a valid condition - only set expression, type is optional
+            const condition: ConditionDto = {
+                expression: typeof conditionData.expression === 'string' ? conditionData.expression : "true"
+            };
+            
+            // Add type if it exists
+            if (typeof conditionData.type === 'string') {
+                condition.type = conditionData.type;
+            }
+            
+            result.condition = condition;
+        }
+
+        return result;
+    });
+};
+
+export const updateWorkflow = async (
     id: string,
     nodes: Node[],
-    edges: Edge[]
-): Promise<WorkflowDetailDto> => {
+    edges: Edge[],
+    name: string,
+    description: string
+): Promise<string> => {
     // Convert React Flow data to backend DTO format
-    const workflowData = mapWorkflowToDto(nodes, edges);
-    
-    // No longer sending name and description to avoid concurrency issues
-    const response = await api.post(`${WORKFLOWS_ENDPOINT}/${id}/save`, workflowData);
-    return response.data;
-};
-
-// Helper function to convert React Flow nodes and edges to backend DTO format
-export const mapWorkflowToDto = (nodes: Node[], edges: Edge[]): WorkflowSaveValues => {
-    // Map nodes from React Flow format to backend DTO format
-    const mappedNodes = nodes.map(node => {
-        // Special handling for manual trigger node
-        if (node.type === 'manual-trigger') {
-            return {
-                id: node.id,
-                nodeType: "ManualTriggerActivity",
-                nodeKind: "TRIGGER",
-                label: String(node.data?.label || "Manual Trigger"),
-                x: node.position.x,
-                y: node.position.y,
-                configJson: JSON.stringify({})
-            };
-        }
-
-        // Extract node data without internal React Flow properties
-        const nodeData = { ...node.data };
-        delete nodeData.label;
-        delete nodeData.nodeKind;
-        delete nodeData.nodeType;
-        delete nodeData.id;
-        delete nodeData.selected;
-        delete nodeData.dragging;
-        delete nodeData.targetPosition;
-        delete nodeData.sourcePosition;
-        delete nodeData.configJson; // Remove any existing configJson to prevent nesting
-
-        // If there's a configJson in the data, parse it and merge with other properties
-        let configData: Record<string, unknown> = {};
-        if (node.data?.configJson && typeof node.data.configJson === 'string') {
-            try {
-                const parsed = JSON.parse(node.data.configJson);
-                if (typeof parsed === 'object' && parsed !== null) {
-                    configData = parsed;
-                }
-            } catch (e) {
-                console.error('Failed to parse configJson:', e);
-            }
-        }
-
-        // Merge config data with other node data properties
-        const finalConfig = {
-            ...configData,
-            ...nodeData
-        };
-
-        return {
-            id: node.id,
-            nodeType: node.type || "default",
-            nodeKind: (node.data?.nodeKind || "ACTION") as string,
-            label: String(node.data?.label || node.type || "Unnamed Node"),
-            x: node.position.x,
-            y: node.position.y,
-            configJson: JSON.stringify(finalConfig)
-        };
-    });
-
-    // Map edges from React Flow format to backend DTO format
-    const mappedEdges = edges.map(edge => ({
-        id: edge.id,
-        sourceNodeId: edge.source,
-        targetNodeId: edge.target,
-        label: String(edge.label || ""),
-        edgeType: edge.type || "default",
-        conditionJson: JSON.stringify(edge.data || {}),
-        sourceHandle: edge.sourceHandle || "",
-        targetHandle: edge.targetHandle || ""
-    }));
-
-    return {
-        nodes: mappedNodes,
-        edges: mappedEdges
+    const workflowData: WorkflowSaveValues = {
+        name,
+        description,
+        nodes: convertNodesToBackendFormat(nodes),
+        edges: convertEdgesToBackendFormat(edges)
     };
+    
+    // Send as PUT request to align with backend endpoint
+    const response = await api.put(`${WORKFLOWS_ENDPOINT}/${id}`, workflowData);
+    return response.data.id;
 };

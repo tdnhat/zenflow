@@ -18,6 +18,7 @@ using Modules.Workflow.Infrastructure.Services.Workflow.Activities.Email;
 using Modules.Workflow.Infrastructure.Services.Workflow.Json;
 using Modules.Workflow.Infrastructure.Services.Workflow.Playwright;
 using System;
+using Modules.Workflow.Infrastructure.Services.Workflow.Activities.Http;
 
 namespace Modules.Workflow.Infrastructure.Extensions
 {
@@ -27,66 +28,72 @@ namespace Modules.Workflow.Infrastructure.Extensions
         {
             // Register database
             services.AddWorkflowDatabase(configuration);
-            
+
             // Register core workflow services
             services.AddWorkflowCore();
-            
+
             // Register activity executors
             services.AddActivityExecutors();
-            
+
             // Register external services
             services.AddPlaywrightServices();
             services.AddAIServices(configuration);
             services.AddEmailServices();
-            
+
             return services;
         }
-        
+
         private static IServiceCollection AddWorkflowDatabase(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddDbContext<WorkflowDbContext>(options =>
                 options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
-                
+
             services.AddScoped<IWorkflowRepository, WorkflowRepository>();
             services.AddScoped<IWorkflowInstanceRepository, WorkflowInstanceRepository>();
-            
+
             return services;
         }
-        
+
         private static IServiceCollection AddWorkflowCore(this IServiceCollection services)
         {
             services.AddScoped<IWorkflowEngine, WorkflowEngine>();
             services.AddScoped<IWorkflowJsonLoader, WorkflowJsonLoader>();
-            
+
+            services.AddHttpServices();
+
             return services;
         }
-        
+
         private static IServiceCollection AddActivityExecutors(this IServiceCollection services)
         {
             // Register Email activities
             services.RegisterActivity<EmailActivityExecutor>(new SendEmailActivityDescriptor());
-            
+
             // Register Playwright activities
             services.AddScoped<PlaywrightActivityExecutor>();
             services.AddScoped<IActivityExecutor, PlaywrightActivityExecutor>();
-            
+
             // Register AI activities
             services.AddScoped<AIActivityExecutor>();
             services.AddScoped<IActivityExecutor, AIActivityExecutor>();
-            
+
+            services.AddScoped<HttpActivityExecutor>();
+            services.AddScoped<IActivityExecutor, HttpActivityExecutor>();
+            services.RegisterActivity<HttpActivityExecutor>(new HttpActivityDescriptor());
+
             return services;
         }
-        
+
         private static IServiceCollection AddPlaywrightServices(this IServiceCollection services)
         {
             services.AddSingleton<IPlaywrightFactory, PlaywrightFactory>();
             services.AddSingleton<IPlaywright>(provider =>
                 Playwright.CreateAsync().GetAwaiter().GetResult());
             services.AddSingleton<IPlaywrightService, PlaywrightService>();
-            
+
             return services;
         }
-        
+
         private static IServiceCollection AddAIServices(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddHttpClient("AIService", client =>
@@ -98,11 +105,11 @@ namespace Modules.Workflow.Infrastructure.Extensions
                 }
                 client.Timeout = TimeSpan.FromSeconds(60);
             });
-            
+
             // Register both implementations
             services.AddScoped<AIService>();
             services.AddScoped<MockAIService>();
-            
+
             // Use environment to determine which implementation to use
             services.AddScoped<IAIService>(provider =>
             {
@@ -111,14 +118,24 @@ namespace Modules.Workflow.Infrastructure.Extensions
                     ? provider.GetRequiredService<MockAIService>()
                     : provider.GetRequiredService<AIService>();
             });
-            
+
             return services;
         }
-        
+
         private static IServiceCollection AddEmailServices(this IServiceCollection services)
         {
             services.AddScoped<IEmailService, FileEmailService>();
-            
+
+            return services;
+        }
+
+        private static IServiceCollection AddHttpServices(this IServiceCollection services)
+        {
+            services.AddHttpClient("WorkflowHttpClient", client =>
+            {
+                client.Timeout = TimeSpan.FromSeconds(60);
+            });
+
             return services;
         }
 
@@ -130,7 +147,7 @@ namespace Modules.Workflow.Infrastructure.Extensions
                 var dbContext = scope.ServiceProvider.GetRequiredService<WorkflowDbContext>();
                 dbContext.Database.ExecuteSqlRaw("CREATE SCHEMA IF NOT EXISTS workflow;");
             }
-            
+
             return app;
         }
     }

@@ -27,21 +27,10 @@ import { v4 as uuidv4 } from "uuid";
 
 // Map of node types to their display names
 const nodeTypeDisplayNames: Record<string, string> = {
-    "manual-trigger": "Manual Trigger",
-    navigate: "Navigate",
-    click: "Click",
-    "input-text": "Input Text",
-    "wait-for-selector": "Wait for Selector",
-    screenshot: "Screenshot",
-    "crawl-data": "Crawl Data",
     "ZenFlow.Activities.Http.HttpRequestActivity": "HTTP Request",
     "ZenFlow.Activities.Email.SendEmailActivity": "Send Email",
     "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity":
         "Extract Data",
-    // Add shorter aliases for the workflow editor to use
-    "http-request": "HTTP Request",
-    "send-email": "Send Email",
-    "extract-data": "Extract Data",
 };
 
 const selector = (state: ReturnType<typeof useWorkflowStore.getState>) => ({

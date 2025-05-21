@@ -43,7 +43,7 @@ export default function WorkflowEditor() {
         return () => {
             clearWorkflow();
         };
-    }, []); // Empty dependency array ensures this only runs on mount/unmount
+    }, [clearWorkflow]);
 
     const handleRetry = useCallback(() => {
         refetch();

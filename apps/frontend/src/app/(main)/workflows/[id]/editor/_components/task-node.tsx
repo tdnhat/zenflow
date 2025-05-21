@@ -1,9 +1,18 @@
 "use client";
 
 import { DragEvent } from "react";
-import { NodeTypeTaskDto } from "@/types/workflow.type";
+import { WorkflowNodeDto } from "@/types/workflow.type";
 
-export default function TaskNode({ title, description, type }: NodeTypeTaskDto) {
+// Define the props type for TaskNode, using name for title and activityType for type
+type TaskNodeProps = Pick<WorkflowNodeDto, "name" | "activityType"> & {
+    description: string;
+};
+
+export default function TaskNode({
+    name: title,
+    description,
+    activityType: type,
+}: TaskNodeProps) {
     const onDragStart = (event: DragEvent<HTMLDivElement>) => {
         // Set the node type as drag data
         event.dataTransfer.setData("application/reactflow", type);

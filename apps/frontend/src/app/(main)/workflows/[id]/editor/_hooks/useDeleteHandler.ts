@@ -18,23 +18,33 @@ export const useDeleteHandler = (
             selectedElements.nodes.length > 0 ||
             selectedElements.edges.length > 0
         ) {
+            // Get IDs of selected nodes for efficient lookup
+            const selectedNodeIds = new Set(selectedElements.nodes.map(n => n.id));
+
             // Filter out the selected nodes
-            setNodes(
-                nodes.filter(
-                    (node) =>
-                        !selectedElements.nodes.some((n) => n.id === node.id)
-                )
+            const remainingNodes = nodes.filter(
+                (node) => !selectedNodeIds.has(node.id)
             );
+            setNodes(remainingNodes);
 
-            // Filter out the selected edges
-            setEdges(
-                edges.filter(
-                    (edge) =>
-                        !selectedElements.edges.some((e) => e.id === edge.id)
-                )
-            );
+            // Get IDs of remaining nodes for edge filtering
+            const remainingNodeIds = new Set(remainingNodes.map(n => n.id));
 
-            // Clear selection after deletion to prevent infinite loop
+            // Filter out selected edges AND edges connected to deleted nodes
+            const remainingEdges = edges.filter(edge => {
+                // Check if the edge itself is selected
+                const isSelectedEdge = selectedElements.edges.some(e => e.id === edge.id);
+                if (isSelectedEdge) {
+                    return false; // Remove selected edge
+                }
+                // Check if the edge is connected to a deleted node
+                const sourceExists = remainingNodeIds.has(edge.source);
+                const targetExists = remainingNodeIds.has(edge.target);
+                return sourceExists && targetExists; // Keep edge only if both source and target still exist
+            });
+            setEdges(remainingEdges);
+
+            // Clear selection after deletion
             setSelectedElements({ nodes: [], edges: [] });
         }
     }, [

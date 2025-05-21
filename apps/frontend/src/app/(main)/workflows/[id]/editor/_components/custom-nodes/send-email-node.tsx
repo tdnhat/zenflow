@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Handle, Position, NodeProps } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
 import {
     Card,
     CardContent,
@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { MailIcon, SendIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useWorkflowStore } from "@/store/workflow.store";
 
 // Define the node data interface
 type SendEmailNodeData = {
@@ -29,43 +30,109 @@ type SendEmailNodeData = {
 
 export default function SendEmailNode({ id, data, selected }: NodeProps) {
     const emailData = data as unknown as SendEmailNodeData;
+    const { setNodes } = useReactFlow();
+    const setNodeInputActive = useWorkflowStore((state) => state.setNodeInputActive);
 
-    // Initialize activityProperties if not present
-    if (!emailData.activityProperties) {
-        emailData.activityProperties = {
-            to: "",
-            subject: "",
-            body: "",
-            isHtml: false,
-        };
-    }
+    // Ensure activityProperties is initialized for the current data
+    const currentActivityProperties = emailData.activityProperties || { to: "", subject: "", body: "", isHtml: false };
 
     const handleToChange = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement>) => {
-            emailData.activityProperties.to = evt.target.value;
+            const newValue = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as SendEmailNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { to: "", subject: "", body: "", isHtml: false }),
+                                    to: newValue,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [emailData]
+        [id, setNodes]
     );
 
     const handleSubjectChange = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement>) => {
-            emailData.activityProperties.subject = evt.target.value;
+            const newValue = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as SendEmailNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { to: "", subject: "", body: "", isHtml: false }),
+                                    subject: newValue,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [emailData]
+        [id, setNodes]
     );
 
     const handleBodyChange = useCallback(
         (evt: React.ChangeEvent<HTMLTextAreaElement>) => {
-            emailData.activityProperties.body = evt.target.value;
+            const newValue = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as SendEmailNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { to: "", subject: "", body: "", isHtml: false }),
+                                    body: newValue,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [emailData]
+        [id, setNodes]
     );
 
     const handleIsHtmlChange = useCallback(
         (checked: boolean) => {
-            emailData.activityProperties.isHtml = checked;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as SendEmailNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { to: "", subject: "", body: "", isHtml: false }),
+                                    isHtml: checked,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [emailData]
+        [id, setNodes]
     );
 
     // Enhanced node selection styles
@@ -92,12 +159,12 @@ export default function SendEmailNode({ id, data, selected }: NodeProps) {
                         <Badge
                             className={cn(
                                 "text-[10px] text-white border-none",
-                                emailData.activityProperties.isHtml
+                                currentActivityProperties.isHtml
                                     ? "bg-violet-500 dark:bg-violet-600"
                                     : "bg-purple-500 dark:bg-purple-600"
                             )}
                         >
-                            {emailData.activityProperties.isHtml
+                            {currentActivityProperties.isHtml
                                 ? "HTML"
                                 : "Text"}
                         </Badge>
@@ -115,8 +182,10 @@ export default function SendEmailNode({ id, data, selected }: NodeProps) {
                         </Label>
                         <Input
                             id={`to-${id}`}
-                            value={emailData.activityProperties?.to || ""}
+                            value={currentActivityProperties?.to || ""}
                             onChange={handleToChange}
+                            onFocus={() => setNodeInputActive(true)}
+                            onBlur={() => setNodeInputActive(false)}
                             className="h-9 text-sm pl-3 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-purple-500 dark:focus-visible:ring-purple-400"
                             placeholder="recipient@example.com"
                         />
@@ -132,8 +201,10 @@ export default function SendEmailNode({ id, data, selected }: NodeProps) {
                         </Label>
                         <Input
                             id={`subject-${id}`}
-                            value={emailData.activityProperties?.subject || ""}
+                            value={currentActivityProperties?.subject || ""}
                             onChange={handleSubjectChange}
+                            onFocus={() => setNodeInputActive(true)}
+                            onBlur={() => setNodeInputActive(false)}
                             className="h-9 text-sm pl-3 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-violet-500 dark:focus-visible:ring-violet-400"
                             placeholder="Email subject"
                         />
@@ -149,8 +220,10 @@ export default function SendEmailNode({ id, data, selected }: NodeProps) {
                         </Label>
                         <Textarea
                             id={`body-${id}`}
-                            value={emailData.activityProperties?.body || ""}
+                            value={currentActivityProperties?.body || ""}
                             onChange={handleBodyChange}
+                            onFocus={() => setNodeInputActive(true)}
+                            onBlur={() => setNodeInputActive(false)}
                             className="min-h-[80px] text-sm pl-3 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-purple-500 dark:focus-visible:ring-purple-400"
                             placeholder="Email content"
                         />
@@ -165,10 +238,10 @@ export default function SendEmailNode({ id, data, selected }: NodeProps) {
                         </Label>
                         <Switch
                             id={`html-${id}`}
-                            checked={
-                                emailData.activityProperties?.isHtml || false
-                            }
+                            checked={currentActivityProperties?.isHtml || false}
                             onCheckedChange={handleIsHtmlChange}
+                            onFocus={() => setNodeInputActive(true)}
+                            onBlur={() => setNodeInputActive(false)}
                             className="data-[state=checked]:bg-violet-500 dark:data-[state=checked]:bg-violet-600"
                         />
                     </div>

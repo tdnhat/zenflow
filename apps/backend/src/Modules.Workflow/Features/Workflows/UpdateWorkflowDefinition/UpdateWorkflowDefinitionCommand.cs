@@ -19,11 +19,9 @@ namespace Modules.Workflow.Features.Workflows.UpdateWorkflowDefinition
         [StringLength(500)]
         public string Description { get; init; } = string.Empty;
 
-        [Required]
-        public List<UpdateWorkflowNodeDto> Nodes { get; init; } = new();
+        public List<UpdateWorkflowNodeDto>? Nodes { get; init; } = new();
 
-        [Required]
-        public List<UpdateWorkflowEdgeDto> Edges { get; init; } = new();
+        public List<UpdateWorkflowEdgeDto>? Edges { get; init; } = new();
     }
 
     public class UpdateWorkflowNodeDto

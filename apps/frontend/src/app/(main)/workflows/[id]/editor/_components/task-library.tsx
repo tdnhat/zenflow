@@ -153,9 +153,9 @@ export default function TaskLibrary({ isOpen }: TaskLibraryProps) {
                                 {category.tasks.map((task) => (
                                     <TaskNode
                                         key={task.type}
-                                        title={task.title}
+                                        name={task.title}
                                         description={task.description}
-                                        type={task.type}
+                                        activityType={task.type}
                                     />
                                 ))}
                             </div>

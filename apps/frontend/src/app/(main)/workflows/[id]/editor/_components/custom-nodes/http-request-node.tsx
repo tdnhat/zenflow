@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Handle, Position, NodeProps } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
 import {
     Card,
     CardContent,
@@ -19,6 +19,7 @@ import {
 import { Globe, ArrowUpRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { useWorkflowStore } from "@/store/workflow.store";
 
 interface HttpRequestNodeData {
     label: string;
@@ -33,27 +34,59 @@ interface HttpRequestNodeData {
 
 export default function HttpRequestNode({ id, data, selected }: NodeProps) {
     const httpData = data as unknown as HttpRequestNodeData;
+    const { setNodes } = useReactFlow();
+    const setNodeInputActive = useWorkflowStore((state) => state.setNodeInputActive);
 
-    // Initialize activityProperties if not present
-    if (!httpData.activityProperties) {
-        httpData.activityProperties = {
-            url: "",
-            method: "GET",
-        };
-    }
+    // Ensure activityProperties is initialized for the current data
+    const currentActivityProperties = httpData.activityProperties || { url: "", method: "GET" };
 
     const handleUrlChange = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement>) => {
-            httpData.activityProperties.url = evt.target.value;
+            const newUrl = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as HttpRequestNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { url: "", method: "GET" }),
+                                    url: newUrl,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [httpData]
+        [id, setNodes]
     );
 
     const handleMethodChange = useCallback(
         (value: string) => {
-            httpData.activityProperties.method = value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as unknown as HttpRequestNodeData;
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { url: "", method: "GET" }),
+                                    method: value,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [httpData]
+        [id, setNodes]
     );
 
     const getMethodColor = (method: string) => {
@@ -72,7 +105,7 @@ export default function HttpRequestNode({ id, data, selected }: NodeProps) {
         ? "ring-2 ring-primary border-primary shadow-lg"
         : "border-border shadow-sm hover:shadow-md";
 
-    const methodColor = getMethodColor(httpData.activityProperties.method);
+    const methodColor = getMethodColor(currentActivityProperties.method);
 
     return (
         <div className="w-[280px] transition-all duration-200">
@@ -96,7 +129,7 @@ export default function HttpRequestNode({ id, data, selected }: NodeProps) {
                                 methodColor
                             )}
                         >
-                            {httpData.activityProperties.method}
+                            {currentActivityProperties.method}
                         </Badge>
                     </CardTitle>
                 </CardHeader>
@@ -111,10 +144,12 @@ export default function HttpRequestNode({ id, data, selected }: NodeProps) {
                             Method
                         </Label>
                         <Select
-                            value={httpData.activityProperties.method}
+                            value={currentActivityProperties.method}
                             onValueChange={handleMethodChange}
                         >
                             <SelectTrigger
+                                onFocus={() => setNodeInputActive(true)}
+                                onBlur={() => setNodeInputActive(false)}
                                 id={`method-${id}`}
                                 className="h-9 text-sm bg-background border-input/50 focus:ring-1 focus:ring-cyan-500 dark:focus:ring-cyan-400"
                             >
@@ -166,8 +201,10 @@ export default function HttpRequestNode({ id, data, selected }: NodeProps) {
                         <div className="relative">
                             <Input
                                 id={`url-${id}`}
-                                value={httpData.activityProperties?.url || ""}
+                                value={currentActivityProperties?.url || ""}
                                 onChange={handleUrlChange}
+                                onFocus={() => setNodeInputActive(true)}
+                                onBlur={() => setNodeInputActive(false)}
                                 className="h-9 text-sm pl-3 pr-8 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-cyan-500 dark:focus-visible:ring-cyan-400"
                                 placeholder="https://api.example.com/endpoint"
                             />
@@ -186,7 +223,7 @@ export default function HttpRequestNode({ id, data, selected }: NodeProps) {
                                 API
                             </Badge>
                             <p className="text-xs text-muted-foreground flex-1">
-                                Makes {httpData.activityProperties.method}{" "}
+                                Makes {currentActivityProperties.method}{" "}
                                 request to the specified endpoint
                             </p>
                         </div>

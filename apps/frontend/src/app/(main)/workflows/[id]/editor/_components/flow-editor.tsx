@@ -1,49 +1,20 @@
-import {
-    Background,
-    Controls,
-    ReactFlow,
-    ReactFlowProvider,
-    Panel,
-    MiniMap,
-    BackgroundVariant,
-    ConnectionLineType,
-    ConnectionMode,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
-import "./flow-editor.css";
 import { useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Loader2, Save, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useWorkflowStore } from "@/store/workflow.store";
-import { useUpdateWorkflow } from "../../../_hooks/use-workflows";
+import { useWorkflowStore, NodeData } from "@/store/workflow.store";
+import { useUpdateWorkflow } from "../../../_hooks/use-workflow";
 import { useShallow } from "zustand/react/shallow";
+import { useReactFlow, Node, Edge } from "@xyflow/react";
 
 import { nodeTypes } from "./custom-nodes/index";
 import { useFlowSelection } from "../_hooks/useFlowSelection";
 import { useDeleteHandler } from "../_hooks/useDeleteHandler";
-import { useReactFlow } from "@xyflow/react";
-import { v4 as uuidv4 } from "uuid";
+import { useFlowDropHandler } from "../_hooks/useFlowDropHandler";
 
-// Map of node types to their display names
-const nodeTypeDisplayNames: Record<string, string> = {
-    "manual-trigger": "Manual Trigger",
-    navigate: "Navigate",
-    click: "Click",
-    "input-text": "Input Text",
-    "wait-for-selector": "Wait for Selector",
-    screenshot: "Screenshot",
-    "crawl-data": "Crawl Data",
-    "ZenFlow.Activities.Http.HttpRequestActivity": "HTTP Request",
-    "ZenFlow.Activities.Email.SendEmailActivity": "Send Email",
-    "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity":
-        "Extract Data",
-    // Add shorter aliases for the workflow editor to use
-    "http-request": "HTTP Request",
-    "send-email": "Send Email",
-    "extract-data": "Extract Data",
-};
+import { FlowCanvas } from "./flow-canvas";
+import { FlowPanel } from "./flow-panel";
+import { FlowEditorProviderComponent } from "./flow-editor-provider";
 
+// Zustand selector
 const selector = (state: ReturnType<typeof useWorkflowStore.getState>) => ({
     nodes: state.nodes,
     edges: state.edges,
@@ -51,169 +22,96 @@ const selector = (state: ReturnType<typeof useWorkflowStore.getState>) => ({
     onEdgesChange: state.onEdgesChange,
     onConnect: state.onConnect,
     setNodes: state.setNodes,
+    setEdges: state.setEdges,
+    isNodeInputActive: state.isNodeInputActive,
 });
 
-// Main flow component
-const Flow = () => {
+const FlowOrchestrator = () => {
     const params = useParams<{ id: string }>();
     const workflowId = params.id as string;
-    const reactFlowWrapper = useRef<HTMLDivElement>(null);
+    const reactFlowWrapper = useRef<HTMLDivElement>(null); // Still needed for FlowCanvas if it uses it
     const { screenToFlowPosition } = useReactFlow();
 
-    // Use Zustand store with shallow selector - from official pattern
-    const { nodes, edges, onNodesChange, onEdgesChange, onConnect, setNodes } =
-        useWorkflowStore(useShallow(selector));
+    const {
+        nodes,
+        edges,
+        onNodesChange,
+        onEdgesChange,
+        onConnect,
+        setNodes,
+        setEdges,
+        isNodeInputActive,
+    } = useWorkflowStore(useShallow(selector));
 
-    // Use extracted hooks for selection and delete operations
+    // Adapter for setNodes for useDeleteHandler
+    const setNodesForDeleteHandler = useCallback((updatedNodes: Node[]) => {
+        setNodes(updatedNodes as Node<NodeData>[]);
+    }, [setNodes]);
+
     const { selectedElements, setSelectedElements, hasSelection } =
         useFlowSelection();
     const { deleteSelectedElements } = useDeleteHandler(
         nodes,
         edges,
-        useWorkflowStore.getState().setNodes,
-        useWorkflowStore.getState().setEdges,
+        setNodesForDeleteHandler,
+        setEdges,
         selectedElements,
         setSelectedElements
     );
 
-    // Find node title from static mapping
-    const findNodeTitle = useCallback((nodeType: string) => {
-        return nodeTypeDisplayNames[nodeType] || nodeType;
-    }, []);
+    const { onDragOver, onDrop } = useFlowDropHandler({ screenToFlowPosition });
 
-    // Handle drag over for drag and drop
-    const onDragOver = useCallback((event: React.DragEvent) => {
-        event.preventDefault();
-        event.dataTransfer.dropEffect = "move";
-    }, []);
-
-    // Handle drop to create new node
-    const onDrop = useCallback(
-        (event: React.DragEvent) => {
-            event.preventDefault();
-            const nodeType = event.dataTransfer.getData(
-                "application/reactflow"
-            );
-            if (!nodeType || typeof nodeType !== "string") {
-                return;
-            }
-            const position = screenToFlowPosition({
-                x: event.clientX,
-                y: event.clientY,
-            });
-            const nodeTitle = findNodeTitle(nodeType);
-            const nodeId = uuidv4();
-
-            // Initialize activity properties based on node type
-            let activityProperties = {};
-
-            if (nodeType === "ZenFlow.Activities.Http.HttpRequestActivity") {
-                activityProperties = {
-                    url: "https://api.example.com",
-                    method: "GET",
-                };
-            } else if (
-                nodeType === "ZenFlow.Activities.Email.SendEmailActivity"
-            ) {
-                activityProperties = {
-                    to: "",
-                    subject: "",
-                    body: "",
-                    isHtml: false,
-                };
-            } else if (
-                nodeType ===
-                "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity"
-            ) {
-                activityProperties = {
-                    targetUrl: "https://example.com",
-                    elementSelector: ".selector",
-                };
-            }
-
-            const newNode = {
-                id: nodeId,
-                type: nodeType,
-                position,
-                data: {
-                    label: nodeTitle,
-                    activityProperties: activityProperties,
-                },
-            };
-            setNodes([...nodes, newNode]);
-        },
-        [screenToFlowPosition, nodes, setNodes, findNodeTitle]
-    );
-
-    // Use the update workflow hook from use-workflows.ts
     const { updateWorkflowData, isSaving, isLoading } =
         useUpdateWorkflow(workflowId);
 
+    // Wrapper to satisfy FlowPanel's prop type while using the specific hook function.
+    // FlowPanel's updateWorkflowData prop expects (nodes: Node[], edges: Edge[]) => void.
+    // Our hook's updateWorkflowData is (nodes: Node<NodeData>[], edges: Edge[]) => Promise<void>.
+    // Since FlowOrchestrator passes currentNodes (which are Node<NodeData>[]) to FlowPanel,
+    // FlowPanel will call this callback with nodes that are actually Node<NodeData>[].
+    const handleUpdateWorkflowDataForPanel = useCallback(
+        (nodesFromPanel: Node[], edgesFromPanel: Edge[]): void => {
+            // We cast nodesFromPanel because we know they originate from Node<NodeData>[]
+            // and FlowPanel's prop type is just looser than the actual data flow.
+            updateWorkflowData(nodesFromPanel as Node<NodeData>[], edgesFromPanel);
+        },
+        [updateWorkflowData]
+    );
+
     return (
-        <div className="react-flow-wrapper">
-            <div className="react-flow-wrapper" ref={reactFlowWrapper}>
-                <ReactFlow
-                    nodes={nodes}
-                    edges={edges}
-                    onNodesChange={onNodesChange}
-                    onEdgesChange={onEdgesChange}
-                    onConnect={onConnect}
-                    onDragOver={onDragOver}
-                    onDrop={onDrop}
-                    nodeTypes={nodeTypes}
-                    connectionLineType={ConnectionLineType.SmoothStep}
-                    connectionMode={ConnectionMode.Loose}
-                    defaultEdgeOptions={{
-                        type: "smoothstep",
-                        style: {
-                            strokeWidth: 2,
-                        },
-                        animated: true,
-                    }}
-                    fitView
-                    deleteKeyCode={null} // Disable built-in delete to use our custom implementation
-                >
-                    <MiniMap zoomable pannable position="bottom-right" />
-                    <Background variant={BackgroundVariant.Dots} />
-                    <Controls />
-                    <Panel position="top-right">
-                        <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={deleteSelectedElements}
-                                disabled={!hasSelection}
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                onClick={() => updateWorkflowData(nodes, edges)}
-                                disabled={isSaving || isLoading}
-                            >
-                                {isSaving ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : isLoading ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Save className="h-4 w-4" />
-                                )}
-                            </Button>
-                        </div>
-                    </Panel>
-                </ReactFlow>
-            </div>
+        <div className="react-flow-wrapper" ref={reactFlowWrapper}> {/* This outer div might be redundant if FlowCanvas handles it */}
+            <FlowCanvas
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onDragOver={onDragOver}
+                onDrop={onDrop}
+                nodeTypes={nodeTypes}
+                panOnDrag={!isNodeInputActive}
+                zoomOnScroll={!isNodeInputActive}
+                nodesDraggable={!isNodeInputActive}
+                reactFlowWrapperRef={reactFlowWrapper} // Pass ref to FlowCanvas
+            />
+            <FlowPanel
+                deleteSelectedElements={deleteSelectedElements}
+                hasSelection={hasSelection}
+                updateWorkflowData={handleUpdateWorkflowDataForPanel}
+                isSaving={isSaving}
+                isLoading={isLoading}
+                currentNodes={nodes}
+                currentEdges={edges}
+            />
         </div>
     );
 };
 
+// The main export for the editor page
 export const FlowEditor = () => {
     return (
-        <ReactFlowProvider>
-            <div className="react-flow-wrapper">
-                <Flow />
-            </div>
-        </ReactFlowProvider>
+        <FlowEditorProviderComponent>
+            <FlowOrchestrator />
+        </FlowEditorProviderComponent>
     );
 };

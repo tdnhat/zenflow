@@ -140,6 +140,7 @@ export interface CreateWorkflowDefinitionRequest {
 }
 
 export interface UpdateWorkflowDefinitionRequest {
+    workflowId: string;
     name: string;
     description: string;
     nodes: WorkflowNodeDto[];

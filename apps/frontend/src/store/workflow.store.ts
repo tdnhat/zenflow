@@ -9,15 +9,14 @@ import {
     applyEdgeChanges,
     addEdge,
 } from "@xyflow/react";
-import { WorkflowDetailDto } from "@/types/workflow.type";
+import { WorkflowDefinitionDto, WorkflowNodeDto, WorkflowEdgeDto } from "@/types/workflow.type";
 import { v4 as uuidv4 } from "uuid";
 
 // Define a more explicit NodeData type with required fields
 export type NodeData = {
     label: string;
-    nodeKind: string;
-    nodeType: string;
-    configJson?: string | Record<string, unknown>;
+    activityType: string;
+    activityProperties: Record<string, unknown>;
     [key: string]: unknown;
 };
 
@@ -37,9 +36,9 @@ type OperationState = {
 };
 
 type FlowEditorState = {
-    nodes: Node[];
+    nodes: Node<NodeData>[];
     edges: Edge[];
-    setNodes: (nodes: Node[]) => void;
+    setNodes: (nodes: Node<NodeData>[]) => void;
     setEdges: (edges: Edge[]) => void;
     updateNodeData: (nodeId: string, data: Record<string, unknown>) => void;
     isSaving: boolean;
@@ -47,11 +46,13 @@ type FlowEditorState = {
     onNodesChange: OnNodesChange;
     onEdgesChange: OnEdgesChange;
     onConnect: OnConnect;
+    isNodeInputActive: boolean;
+    setNodeInputActive: (isActive: boolean) => void;
 };
 
 type WorkflowState = {
     isInitialized: boolean;
-    initializeWorkflow: (workflow: WorkflowDetailDto | null) => void;
+    initializeWorkflow: (workflow: WorkflowDefinitionDto | null) => void;
     clearWorkflow: () => void;
 };
 
@@ -87,48 +88,32 @@ const nodeTypeTransformers = {
 const transformers = {
     // Transform backend workflow to frontend nodes/edges
     workflowToFlow: (
-        workflow: WorkflowDetailDto | null
-    ): { nodes: Node[]; edges: Edge[] } => {
+        workflow: WorkflowDefinitionDto | null
+    ): { nodes: Node<NodeData>[]; edges: Edge[] } => {
         if (!workflow) {
             return { nodes: [], edges: [] };
         }
 
         // Convert backend node format to React Flow format
-        const nodes: Node[] = workflow.nodes.map((node) => ({
+        const nodes: Node<NodeData>[] = workflow.nodes.map((node: WorkflowNodeDto) => ({
             id: node.id,
-            type: nodeTypeTransformers.toFrontend(node.nodeType),
-            position: { x: node.x, y: node.y },
+            type: nodeTypeTransformers.toFrontend(node.activityType),
+            position: node.position,
             data: {
-                label: node.label,
-                nodeKind: node.nodeKind,
-                nodeType: node.nodeType, // Keep original nodeType in data for reference
-                configJson: node.configJson,
-                // Parse configJson if it's a string
-                ...(typeof node.configJson === "string" && node.configJson
-                    ? (JSON.parse(node.configJson) as Record<string, unknown>)
-                    : typeof node.configJson === "object"
-                    ? (node.configJson as Record<string, unknown>)
-                    : {}),
+                label: node.name,
+                activityType: node.activityType,
+                activityProperties: node.activityProperties || {},
             },
         }));
 
         // Convert backend edge format to React Flow format
-        const edges: Edge[] = workflow.edges.map((edge) => ({
+        const edges: Edge[] = workflow.edges.map((edge: WorkflowEdgeDto) => ({
             id: edge.id,
-            source: edge.sourceNodeId,
-            target: edge.targetNodeId,
-            sourceHandle: edge.sourceHandle || null,
-            targetHandle: edge.targetHandle || null,
-            type: edge.edgeType || "default",
-            data: edge.conditionJson
-                ? typeof edge.conditionJson === "string"
-                    ? (JSON.parse(edge.conditionJson) as Record<
-                          string,
-                          unknown
-                      >)
-                    : (edge.conditionJson as Record<string, unknown>)
-                : {},
-            label: edge.label || undefined,
+            source: edge.source,
+            target: edge.target,
+            type: "smoothstep",
+            animated: true,
+            data: edge.condition ? { condition: edge.condition } : {},
         }));
 
         return { nodes, edges };
@@ -152,7 +137,7 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
     // Flow editor state
     nodes: [],
     edges: [],
-    setNodes: (nodes: Node[]) => set({ nodes }),
+    setNodes: (nodes: Node<NodeData>[]) => set({ nodes }),
     setEdges: (edges: Edge[]) => set({ edges }),
     updateNodeData: (nodeId: string, data: Record<string, unknown>) =>
         set((state) => ({
@@ -164,7 +149,7 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
         })),
     onNodesChange: (changes) =>
         set((state) => ({
-            nodes: applyNodeChanges(changes, state.nodes),
+            nodes: applyNodeChanges(changes, state.nodes) as Node<NodeData>[],
         })),
     onEdgesChange: (changes) =>
         set((state) => ({
@@ -182,10 +167,12 @@ export const useWorkflowStore = create<WorkflowStore>((set) => ({
         })),
     isSaving: false,
     setSaving: (value: boolean) => set({ isSaving: value }),
+    isNodeInputActive: false,
+    setNodeInputActive: (isActive: boolean) => set({ isNodeInputActive: isActive }),
 
     // Workflow initialization
     isInitialized: false,
-    initializeWorkflow: (workflow: WorkflowDetailDto | null) => {
+    initializeWorkflow: (workflow: WorkflowDefinitionDto | null) => {
         const { nodes, edges } = transformers.workflowToFlow(workflow);
         set({ nodes, edges, isInitialized: true });
     },

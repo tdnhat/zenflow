@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { Handle, Position, NodeProps } from "@xyflow/react";
+import { Handle, Position, NodeProps, useReactFlow } from "@xyflow/react";
 import {
     Card,
     CardContent,
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Code2Icon, ExternalLinkIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useWorkflowStore } from "@/store/workflow.store";
 
 // Define the node data interface
 type ExtractDataNodeData = {
@@ -24,27 +25,60 @@ type ExtractDataNodeData = {
 
 export default function ExtractDataNode({ id, data, selected }: NodeProps) {
     const extractData = data as unknown as ExtractDataNodeData;
+    const { setNodes } = useReactFlow();
+    const setNodeInputActive = useWorkflowStore((state) => state.setNodeInputActive);
 
-    // Initialize activityProperties if not present
-    if (!extractData.activityProperties) {
-        extractData.activityProperties = {
-            targetUrl: "",
-            elementSelector: "",
-        };
-    }
+    // Ensure activityProperties is initialized for the current data
+    const currentActivityProperties = extractData.activityProperties || { targetUrl: "", elementSelector: "" };
 
     const handleUrlChange = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement>) => {
-            extractData.activityProperties.targetUrl = evt.target.value;
+            const newUrl = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as ExtractDataNodeData; // Type assertion
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { targetUrl: "", elementSelector: "" }),
+                                    targetUrl: newUrl,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [extractData]
+        [id, setNodes]
     );
 
     const handleSelectorChange = useCallback(
         (evt: React.ChangeEvent<HTMLInputElement>) => {
-            extractData.activityProperties.elementSelector = evt.target.value;
+            const newSelector = evt.target.value;
+            setNodes((nds) =>
+                nds.map((node) => {
+                    if (node.id === id) {
+                        const nodeData = node.data as ExtractDataNodeData; // Type assertion
+                        return {
+                            ...node,
+                            data: {
+                                ...nodeData,
+                                activityProperties: {
+                                    ...(nodeData.activityProperties || { targetUrl: "", elementSelector: "" }),
+                                    elementSelector: newSelector,
+                                },
+                            },
+                        };
+                    }
+                    return node;
+                })
+            );
         },
-        [extractData]
+        [id, setNodes]
     );
 
     // Use different selection styles for better visual feedback
@@ -89,10 +123,12 @@ export default function ExtractDataNode({ id, data, selected }: NodeProps) {
                             <Input
                                 id={`url-${id}`}
                                 value={
-                                    extractData.activityProperties.targetUrl ||
+                                    currentActivityProperties.targetUrl ||
                                     ""
                                 }
                                 onChange={handleUrlChange}
+                                onFocus={() => setNodeInputActive(true)}
+                                onBlur={() => setNodeInputActive(false)}
                                 className="h-9 text-sm pl-3 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400 transition-all"
                                 placeholder="https://example.com"
                             />
@@ -110,10 +146,12 @@ export default function ExtractDataNode({ id, data, selected }: NodeProps) {
                         <Input
                             id={`selector-${id}`}
                             value={
-                                extractData.activityProperties
+                                currentActivityProperties
                                     .elementSelector || ""
                             }
                             onChange={handleSelectorChange}
+                            onFocus={() => setNodeInputActive(true)}
+                            onBlur={() => setNodeInputActive(false)}
                             className="h-9 text-sm pl-3 bg-background border-input/50 focus-visible:ring-1 focus-visible:ring-blue-500 dark:focus-visible:ring-blue-400"
                             placeholder=".quote .text"
                         />

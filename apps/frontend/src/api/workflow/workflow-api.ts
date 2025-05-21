@@ -1,6 +1,14 @@
-import { WorkflowFormValues, WorkflowSaveValues } from "@/app/(main)/workflows/_schemas/workflow.schemas";
+import { WorkflowFormValues } from "@/app/(main)/workflows/_schemas/workflow.schemas";
 import api from "@/lib/axios";
-import { ConditionDto, InputMappingDto, OutputMappingDto, WorkflowDefinitionDto, WorkflowEdgeDto, WorkflowNodeDto } from "@/types/workflow.type";
+import { 
+    ConditionDto, 
+    InputMappingDto, 
+    OutputMappingDto, 
+    WorkflowDefinitionDto, 
+    WorkflowEdgeDto, 
+    WorkflowNodeDto,
+    UpdateWorkflowDefinitionRequest
+} from "@/types/workflow.type";
 import { Edge, Node } from "@xyflow/react";
 
 // Base endpoint for workflows
@@ -118,21 +126,13 @@ export const convertEdgesToBackendFormat = (edges: Edge[]): WorkflowEdgeDto[] =>
 };
 
 export const updateWorkflow = async (
-    id: string,
-    nodes: Node[],
-    edges: Edge[],
-    name: string,
-    description: string
+    payload: UpdateWorkflowDefinitionRequest
 ): Promise<string> => {
-    // Convert React Flow data to backend DTO format
-    const workflowData: WorkflowSaveValues = {
-        name,
-        description,
-        nodes: convertNodesToBackendFormat(nodes),
-        edges: convertEdgesToBackendFormat(edges)
-    };
+    // The payload already contains nodes and edges in the correct DTO format,
+    // and includes the name, and description, and now workflowId.
     
-    // Send as PUT request to align with backend endpoint
-    const response = await api.put(`${WORKFLOWS_ENDPOINT}/${id}`, workflowData);
-    return response.data.id;
+    // The backend endpoint expects the workflow ID in the route AND in the body.
+    // The payload includes `workflowId` which is the workflowId.
+    const response = await api.put(`${WORKFLOWS_ENDPOINT}/${payload.workflowId}`, payload);
+    return response.data.id; // Assuming the backend returns { id: string } upon successful update
 };

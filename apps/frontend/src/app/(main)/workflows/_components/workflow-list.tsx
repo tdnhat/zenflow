@@ -1,8 +1,8 @@
 import { WorkflowCard } from "./workflow-card";
-import { WorkflowDto } from "@/types/workflow.type";
+import { WorkflowDefinitionDto } from "@/types/workflow.type";
 
 interface WorkflowListProps {
-    workflows: WorkflowDto[];
+    workflows: WorkflowDefinitionDto[];
 }
 
 export const WorkflowList: React.FC<WorkflowListProps> = ({ workflows }) => {

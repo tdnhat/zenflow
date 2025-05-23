@@ -15,6 +15,7 @@ using Modules.Workflow.Infrastructure.Services.Email;
 using Modules.Workflow.Infrastructure.Services.Playwright;
 using Modules.Workflow.Infrastructure.Services.Workflow;
 using Modules.Workflow.Infrastructure.Services.Workflow.Activities.Email;
+using Modules.Workflow.Infrastructure.Services.Workflow.Activities.Data;
 using Modules.Workflow.Infrastructure.Services.Workflow.Json;
 using Modules.Workflow.Infrastructure.Services.Workflow.Playwright;
 using System;
@@ -80,6 +81,11 @@ namespace Modules.Workflow.Infrastructure.Extensions
             services.AddScoped<HttpActivityExecutor>();
             services.AddScoped<IActivityExecutor, HttpActivityExecutor>();
             services.RegisterActivity<HttpActivityExecutor>(new HttpActivityDescriptor());
+
+            // Register Data Transform activities
+            services.AddScoped<TransformDataActivityExecutor>();
+            services.AddScoped<IActivityExecutor, TransformDataActivityExecutor>();
+            services.RegisterActivity<TransformDataActivityExecutor>(new TransformDataActivityDescriptor());
 
             return services;
         }

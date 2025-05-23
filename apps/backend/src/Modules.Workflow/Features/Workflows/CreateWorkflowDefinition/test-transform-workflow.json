@@ -1,0 +1,136 @@
+{
+    "name": "Data Transform Demo",
+    "description": "Demonstrates data transformation capabilities with different transformation types",
+    "nodes": [
+        {
+            "id": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "name": "Extract Product Data",
+            "activityType": "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity",
+            "activityProperties": {
+                "targetUrl": "https://example-store.com/products",
+                "elementSelector": ".product-info"
+            },
+            "inputMappings": [],
+            "outputMappings": [
+                {
+                    "sourceProperty": "extractedText",
+                    "targetProperty": "rawProductData"
+                }
+            ],
+            "position": {
+                "x": 100,
+                "y": 100
+            }
+        },
+        {
+            "id": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+            "name": "Transform JSON Data",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "json",
+                "inputProperty": "rawProductData",
+                "outputProperty": "productNames",
+                "jsonPath": "$.products[*].name"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+                    "sourceProperty": "rawProductData",
+                    "targetProperty": "rawProductData"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "productNames",
+                    "targetProperty": "extractedNames"
+                }
+            ],
+            "position": {
+                "x": 350,
+                "y": 100
+            }
+        },
+        {
+            "id": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+            "name": "Format Product List",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "format",
+                "inputProperty": "extractedNames",
+                "outputProperty": "formattedList",
+                "transformationExpression": "Product List:\\n{extractedNames}"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+                    "sourceProperty": "extractedNames",
+                    "targetProperty": "extractedNames"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "formattedList",
+                    "targetProperty": "emailBody"
+                }
+            ],
+            "position": {
+                "x": 600,
+                "y": 100
+            }
+        },
+        {
+            "id": "4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d",
+            "name": "Send Product Report",
+            "activityType": "ZenFlow.Activities.Email.SendEmailActivity",
+            "activityProperties": {
+                "to": "admin@company.com",
+                "subject": "Daily Product Report",
+                "body": "Placeholder content - will be replaced by transformed data",
+                "isHtml": false
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+                    "sourceProperty": "emailBody",
+                    "targetProperty": "body"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "success",
+                    "targetProperty": "emailSent"
+                }
+            ],
+            "position": {
+                "x": 850,
+                "y": 100
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "edge-1-2",
+            "source": "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "target": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+            "condition": {
+                "expression": "true"
+            }
+        },
+        {
+            "id": "edge-2-3",
+            "source": "2a3b4c5d-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+            "target": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+            "condition": {
+                "expression": "true"
+            }
+        },
+        {
+            "id": "edge-3-4",
+            "source": "3a4b5c6d-7e8f-9a0b-1c2d-3e4f5a6b7c8d",
+            "target": "4a5b6c7d-8e9f-0a1b-2c3d-4e5f6a7b8c9d",
+            "condition": {
+                "expression": "true"
+            }
+        }
+    ]
+}

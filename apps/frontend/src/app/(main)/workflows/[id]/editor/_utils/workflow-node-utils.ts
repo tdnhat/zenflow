@@ -5,6 +5,7 @@ export const nodeTypeDisplayNames: Record<string, string> = {
     "ZenFlow.Activities.Http.HttpRequestActivity": "HTTP Request",
     "ZenFlow.Activities.Email.SendEmailActivity": "Send Email",
     "ZenFlow.Activities.Playwright.ExtractTextFromElementActivity": "Extract Data",
+    "ZenFlow.Activities.Data.TransformDataActivity": "Transform Data",
     // Add other mappings as needed
 };
 

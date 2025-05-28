@@ -1,0 +1,103 @@
+{
+  "name": "Simple Transform Test",
+  "description": "A simple test to validate transform data activity functionality",
+  "nodes": [
+    {
+      "id": "transform-test-1",
+      "name": "Test JSON Transform",
+      "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+      "activityProperties": {
+        "transformationType": "json",
+        "inputProperty": "testData",
+        "outputProperty": "extractedNames",
+        "jsonPath": "$.users[*].name"
+      },
+      "inputMappings": [],
+      "outputMappings": [
+        {
+          "sourceProperty": "extractedNames",
+          "targetProperty": "userNames"
+        }
+      ],
+      "position": {
+        "x": 100,
+        "y": 100
+      }
+    },
+    {
+      "id": "transform-test-2",
+      "name": "Test Regex Transform",
+      "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+      "activityProperties": {
+        "transformationType": "regex",
+        "inputProperty": "userNames",
+        "outputProperty": "cleanedNames",
+        "regexPattern": "\\s+",
+        "replaceValue": "_"
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "transform-test-1",
+          "sourceProperty": "userNames",
+          "targetProperty": "userNames"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "cleanedNames",
+          "targetProperty": "processedNames"
+        }
+      ],
+      "position": {
+        "x": 350,
+        "y": 100
+      }
+    },
+    {
+      "id": "transform-test-3",
+      "name": "Test Format Transform",
+      "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+      "activityProperties": {
+        "transformationType": "format",
+        "inputProperty": "processedNames",
+        "outputProperty": "formattedMessage",
+        "transformationExpression": "Processed user names: {processedNames}"
+      },
+      "inputMappings": [
+        {
+          "sourceNodeId": "transform-test-2",
+          "sourceProperty": "processedNames",
+          "targetProperty": "processedNames"
+        }
+      ],
+      "outputMappings": [
+        {
+          "sourceProperty": "formattedMessage",
+          "targetProperty": "finalOutput"
+        }
+      ],
+      "position": {
+        "x": 600,
+        "y": 100
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-1-2",
+      "source": "transform-test-1",
+      "target": "transform-test-2",
+      "condition": {
+        "expression": "true"
+      }
+    },
+    {
+      "id": "edge-2-3",
+      "source": "transform-test-2",
+      "target": "transform-test-3",
+      "condition": {
+        "expression": "true"
+      }
+    }
+  ]
+} 

@@ -1,0 +1,258 @@
+{
+    "name": "GitHub Repository Analysis",
+    "description": "Extract repository data from GitHub API, transform using JSONPath to get specific fields, and format as a repository summary",
+    "nodes": [
+        {
+            "id": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "name": "Extract GitHub Repo Data",
+            "activityType": "ZenFlow.Activities.Http.HttpRequestActivity",
+            "activityProperties": {
+                "url": "https://api.github.com/repos/microsoft/typescript",
+                "method": "GET",
+                "headers": {
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "ZenFlow-Workflow-Engine"
+                }
+            },
+            "inputMappings": [],
+            "outputMappings": [
+                {
+                    "sourceProperty": "responseBody",
+                    "targetProperty": "repoRawData"
+                }
+            ],
+            "position": {
+                "x": 100,
+                "y": 100
+            }
+        },
+        {
+            "id": "b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+            "name": "Extract Repository Name",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "json",
+                "inputProperty": "repoRawData",
+                "outputProperty": "repoName",
+                "jsonPath": "$.name"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+                    "sourceProperty": "repoRawData",
+                    "targetProperty": "repoRawData"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "repoName",
+                    "targetProperty": "repositoryName"
+                }
+            ],
+            "position": {
+                "x": 350,
+                "y": 100
+            }
+        },
+        {
+            "id": "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+            "name": "Extract Repository Stats",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "json",
+                "inputProperty": "repoRawData",
+                "outputProperty": "repoStats",
+                "jsonPath": "$.[stargazers_count,forks_count,open_issues_count]"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+                    "sourceProperty": "repoRawData",
+                    "targetProperty": "repoRawData"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "repoStats",
+                    "targetProperty": "repositoryStats"
+                }
+            ],
+            "position": {
+                "x": 350,
+                "y": 250
+            }
+        },
+        {
+            "id": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+            "name": "Extract Repository Description",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "json",
+                "inputProperty": "repoRawData",
+                "outputProperty": "repoDescription",
+                "jsonPath": "$.description"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+                    "sourceProperty": "repoRawData",
+                    "targetProperty": "repoRawData"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "repoDescription",
+                    "targetProperty": "repositoryDescription"
+                }
+            ],
+            "position": {
+                "x": 350,
+                "y": 400
+            }
+        },
+        {
+            "id": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+            "name": "Clean Description Text",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "text",
+                "inputProperty": "repositoryDescription",
+                "outputProperty": "cleanDescription",
+                "transformationExpression": "trim()"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+                    "sourceProperty": "repositoryDescription",
+                    "targetProperty": "repositoryDescription"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "cleanDescription",
+                    "targetProperty": "cleanedDescription"
+                }
+            ],
+            "position": {
+                "x": 600,
+                "y": 400
+            }
+        },
+        {
+            "id": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+            "name": "Format Repository Summary",
+            "activityType": "ZenFlow.Activities.Data.TransformDataActivity",
+            "activityProperties": {
+                "transformationType": "format",
+                "inputProperty": "repositoryName",
+                "outputProperty": "repositorySummary",
+                "transformationExpression": "📦 Repository: {repositoryName}\\n📝 Description: {cleanedDescription}\\n⭐ Stars: {repositoryStats}\\n\\n🔗 https://github.com/microsoft/{repositoryName}"
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+                    "sourceProperty": "repositoryName",
+                    "targetProperty": "repositoryName"
+                },
+                {
+                    "sourceNodeId": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+                    "sourceProperty": "cleanedDescription",
+                    "targetProperty": "cleanedDescription"
+                },
+                {
+                    "sourceNodeId": "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+                    "sourceProperty": "repositoryStats",
+                    "targetProperty": "repositoryStats"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "repositorySummary",
+                    "targetProperty": "finalSummary"
+                }
+            ],
+            "position": {
+                "x": 850,
+                "y": 250
+            }
+        },
+        {
+            "id": "a7b8c9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+            "name": "Send Repository Report",
+            "activityType": "ZenFlow.Activities.Email.SendEmailActivity",
+            "activityProperties": {
+                "to": "developer@company.com",
+                "subject": "GitHub Repository Analysis Report",
+                "body": "Repository analysis completed successfully.",
+                "isHtml": false
+            },
+            "inputMappings": [
+                {
+                    "sourceNodeId": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+                    "sourceProperty": "finalSummary",
+                    "targetProperty": "body"
+                }
+            ],
+            "outputMappings": [
+                {
+                    "sourceProperty": "success",
+                    "targetProperty": "emailSent"
+                }
+            ],
+            "position": {
+                "x": 1100,
+                "y": 250
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "11a2b3c4-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+            "source": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "target": "b2c3d4e5-6f7a-8b9c-0d1e-2f3a4b5c6d7e",
+            "condition": {
+                "expression": "statusCode == 200"
+            }
+        },
+        {
+            "id": "22b3c4d5-6e7f-8a9b-0c1d-2e3f4a5b6c7d",
+            "source": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "target": "c3d4e5f6-7a8b-9c0d-1e2f-3a4b5c6d7e8f",
+            "condition": {
+                "expression": "statusCode == 200"
+            }
+        },
+        {
+            "id": "33c4d5e6-7f8a-9b0c-1d2e-3f4a5b6c7d8e",
+            "source": "a1b2c3d4-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
+            "target": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+            "condition": {
+                "expression": "statusCode == 200"
+            }
+        },
+        {
+            "id": "44d5e6f7-8a9b-0c1d-2e3f-4a5b6c7d8e9f",
+            "source": "d4e5f6a7-8b9c-0d1e-2f3a-4b5c6d7e8f9a",
+            "target": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+            "condition": {
+                "expression": "success == true"
+            }
+        },
+        {
+            "id": "55e6f7a8-9b0c-1d2e-3f4a-5b6c7d8e9f0a",
+            "source": "e5f6a7b8-9c0d-1e2f-3a4b-5c6d7e8f9a0b",
+            "target": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+            "condition": {
+                "expression": "success == true"
+            }
+        },
+        {
+            "id": "66f7a8b9-0c1d-2e3f-4a5b-6c7d8e9f0a1b",
+            "source": "f6a7b8c9-0d1e-2f3a-4b5c-6d7e8f9a0b1c",
+            "target": "a7b8c9d0-1e2f-3a4b-5c6d-7e8f9a0b1c2d",
+            "condition": {
+                "expression": "success == true"
+            }
+        }
+    ]
+}

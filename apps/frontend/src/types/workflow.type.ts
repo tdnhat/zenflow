@@ -88,6 +88,16 @@ export interface SendEmailActivityProperties {
     isHtml: boolean;
 }
 
+export interface TransformDataActivityProperties {
+    transformationType: string;
+    inputProperty: string;
+    outputProperty: string;
+    transformationExpression?: string;
+    jsonPath?: string;
+    regexPattern?: string;
+    replaceValue?: string;
+}
+
 export interface ArticleSummarizationActivityProperties {
     maxLength?: number;
 }
